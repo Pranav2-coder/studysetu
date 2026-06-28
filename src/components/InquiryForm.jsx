@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { CheckCircle } from 'lucide-react';
-import { submitInquiry } from '../lib/firebase';
+import { submitInquiry } from '../lib/supabase';
 import { areas, budgetRanges } from '../lib/seedData';
 
 const classOptions = [

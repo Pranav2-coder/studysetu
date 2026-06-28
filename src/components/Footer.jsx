@@ -12,7 +12,7 @@ export default function Footer() {
               <img
                 src="/studysetu-logo.png"
                 alt="StudySetu"
-                className="h-14 w-auto max-w-[230px] object-contain brightness-110"
+                className="h-14 w-auto max-w-[230px] object-contain footer-logo-light"
               />
             </Link>
             <p className="text-white/70 text-sm leading-relaxed mb-4">

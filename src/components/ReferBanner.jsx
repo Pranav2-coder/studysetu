@@ -12,7 +12,7 @@ export default function ReferBanner() {
         </div>
         <div>
           <p className="font-heading text-primary text-base md:text-lg leading-snug">
-            Refer a Student and Earn ₹20
+            Refer a Student and Earn upto 100-1000rs
           </p>
           <p className="text-text-muted text-xs mt-0.5">
             Share with friends and earn rewards for every referral.

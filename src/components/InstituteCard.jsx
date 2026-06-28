@@ -8,25 +8,7 @@ export function getCoverImage(institute) {
     return institute.coverImage;
   }
   
-  const curatedImages = {
-    '1': 'https://images.unsplash.com/photo-1577896851231-70ef18881754?auto=format&fit=crop&w=600&q=80', // Sharma Classes (Mathematics/Science)
-    '2': 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&w=600&q=80', // Bright Future Academy
-    '3': 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&w=600&q=80', // Apex Coaching Centre
-    '4': 'https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=600&q=80', // Gurukul Tuition Classes
-    '5': 'https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&w=600&q=80', // Nagpur Computer Academy
-    '6': 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=600&q=80', // CodeBridge Institute
-    '7': 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=600&q=80', // Creative Design Hub
-    '8': 'https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=600&q=80', // Speed Typing
-  };
-
-  if (curatedImages[institute.id]) {
-    return curatedImages[institute.id];
-  }
-
-  // Fallback photography
-  return institute.category === 'Tuition Classes'
-    ? 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?auto=format&fit=crop&w=600&q=80'
-    : 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?auto=format&fit=crop&w=600&q=80';
+  return null;
 }
 
 export default function InstituteCard({ institute }) {
@@ -65,13 +47,21 @@ export default function InstituteCard({ institute }) {
       className="card flex flex-col h-full bg-white relative overflow-hidden group no-underline cursor-pointer"
     >
       {/* Large Cover Image with Overlays */}
-      <div className="relative h-56 overflow-hidden">
-        <img
-          src={imageUrl}
-          alt={name}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-          loading="lazy"
-        />
+      <div className="relative h-56 overflow-hidden bg-[#F6F1E8]">
+        {imageUrl ? (
+          <img
+            src={imageUrl}
+            alt={name}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            loading="lazy"
+          />
+        ) : (
+          <div className={`w-full h-full bg-gradient-to-br flex items-center justify-center ${isTuition ? 'from-[#C8742A]/20 to-[#E9DFD1]' : 'from-[#1F2A44]/20 to-[#E9DFD1]'}`}>
+            <span className="text-6xl font-heading text-primary/30 select-none">
+              {name.charAt(0)}
+            </span>
+          </div>
+        )}
         {/* Dark Gradient Overlay for Typography readability */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-black/10" />
 

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Phone, Mail, MapPin, CheckCircle } from 'lucide-react';
 import SEOHead from '../components/SEOHead';
-import { submitContact } from '../lib/firebase';
+import { submitContact } from '../lib/supabase';
 
 const initialFormState = {
   name: '',

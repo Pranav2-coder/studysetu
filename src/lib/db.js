@@ -1,25 +1,9 @@
-import { db } from './firebase';
-import {
-  collection,
-  getDocs,
-  doc,
-  getDoc,
-  setDoc,
-  deleteDoc,
-  increment
-} from 'firebase/firestore';
+import { supabase } from './supabase';
 import { institutes as seedInstitutes } from './seedData';
 
-// Helper to determine if we should attempt Firestore operations
-const canUseFirestore = () => {
-  // If db is not initialized, we cannot use firestore
-  if (!db) return false;
-  // If we are using the placeholder project ID, fallback to localStorage for instant local evaluation
-  const projId = import.meta.env.VITE_FIREBASE_PROJECT_ID;
-  if (!projId || projId === 'demo-project' || projId.includes('YOUR_')) {
-    return false;
-  }
-  return true;
+// Helper to determine if we should use Supabase operations
+const canUseSupabaseDb = () => {
+  return !!supabase;
 };
 
 // LocalStorage Keys
@@ -49,38 +33,52 @@ const initLocalStorage = () => {
 // Always make sure LocalStorage is initialized on load
 initLocalStorage();
 
-// Seed Firestore if it is empty
-let firestoreSeeded = false;
-async function checkAndSeedFirestore() {
-  if (firestoreSeeded) return;
+// Seed Supabase if it is empty
+let supabaseSeeded = false;
+async function checkAndSeedSupabase() {
+  if (supabaseSeeded || !supabase) return;
   try {
-    const colRef = collection(db, 'institutes');
-    const snapshot = await getDocs(colRef);
-    if (snapshot.empty) {
-      console.log('Firestore institutes collection is empty. Seeding seedData...');
-      // Seed institutes
-      for (const inst of seedInstitutes) {
-        // Set document with seed ID
-        await setDoc(doc(db, 'institutes', inst.id), {
-          ...inst,
-          published: inst.published !== undefined ? inst.published : true,
-          createdAt: new Date().toISOString()
-        });
-
-        // Seed empty analytics counter doc
-        await setDoc(doc(db, 'instituteAnalytics', inst.id), {
-          id: inst.id,
-          views: 0,
-          whatsappClicks: 0,
-          callClicks: 0,
-          qrScans: 0
-        });
-      }
-      console.log('Firestore successfully seeded.');
+    const { count, error } = await supabase
+      .from('institutes')
+      .select('*', { count: 'exact', head: true });
+    
+    if (error) throw error;
+    
+    if (count === 0) {
+      console.log('Supabase institutes table is empty. Seeding seedData...');
+      
+      // Map and insert institutes
+      const dbInstitutes = seedInstitutes.map(inst => ({
+        ...mapToSupabase(inst),
+        created_at: new Date().toISOString()
+      }));
+      
+      const { error: insertError } = await supabase
+        .from('institutes')
+        .insert(dbInstitutes);
+        
+      if (insertError) throw insertError;
+      
+      // Map and insert analytics
+      const dbAnalytics = seedInstitutes.map(inst => ({
+        institute_id: inst.id,
+        views: 0,
+        whatsapp_clicks: 0,
+        call_clicks: 0,
+        qr_scans: 0
+      }));
+      
+      const { error: insertAnalyticsError } = await supabase
+        .from('institute_analytics')
+        .insert(dbAnalytics);
+        
+      if (insertAnalyticsError) throw insertAnalyticsError;
+      
+      console.log('Supabase successfully seeded.');
     }
-    firestoreSeeded = true;
+    supabaseSeeded = true;
   } catch (err) {
-    console.warn('Failed to seed Firestore, will fallback:', err);
+    console.warn('Failed to seed Supabase, will fallback:', err);
   }
 }
 
@@ -95,22 +93,97 @@ const getFieldFromEventType = (eventType) => {
   }
 };
 
+const mapAnalyticsFieldToDb = (field) => {
+  switch (field) {
+    case 'views': return 'views';
+    case 'whatsappClicks': return 'whatsapp_clicks';
+    case 'callClicks': return 'call_clicks';
+    case 'qrScans': return 'qr_scans';
+    default: return field;
+  }
+};
+
+// Data converters between JavaScript camelCase and Database snake_case
+function mapFromSupabase(dbInst) {
+  if (!dbInst) return null;
+  return {
+    id: dbInst.id,
+    slug: dbInst.slug,
+    name: dbInst.name,
+    category: dbInst.category,
+    description: dbInst.description,
+    subjects: dbInst.subjects || [],
+    classesCovered: dbInst.classes_covered || [],
+    area: dbInst.area,
+    address: dbInst.address,
+    fees: dbInst.fees,
+    feesValue: dbInst.fees_value,
+    timings: dbInst.timings,
+    experience: dbInst.experience,
+    phone: dbInst.phone,
+    whatsapp: dbInst.whatsapp,
+    coverImage: dbInst.cover_image,
+    images: dbInst.images || [],
+    featured: dbInst.featured,
+    published: dbInst.published,
+    createdAt: dbInst.created_at,
+    updatedAt: dbInst.updated_at,
+  };
+}
+
+function mapToSupabase(inst) {
+  if (!inst) return null;
+  return {
+    id: inst.id,
+    slug: inst.slug,
+    name: inst.name,
+    category: inst.category,
+    description: inst.description || null,
+    subjects: inst.subjects || [],
+    classes_covered: inst.classesCovered || [],
+    area: inst.area,
+    address: inst.address || null,
+    fees: inst.fees || null,
+    fees_value: inst.feesValue !== undefined ? inst.feesValue : (parseInt(inst.fees) || 0),
+    timings: inst.timings || null,
+    experience: inst.experience || null,
+    phone: inst.phone,
+    whatsapp: inst.whatsapp,
+    cover_image: inst.coverImage || null,
+    images: inst.images || [],
+    featured: inst.featured || false,
+    published: inst.published ?? true,
+    updated_at: new Date().toISOString(),
+  };
+}
+
+function mapAnalyticsFromSupabase(dbAnal) {
+  if (!dbAnal) return null;
+  return {
+    id: dbAnal.institute_id,
+    views: dbAnal.views || 0,
+    whatsappClicks: dbAnal.whatsapp_clicks || 0,
+    callClicks: dbAnal.call_clicks || 0,
+    qrScans: dbAnal.qr_scans || 0,
+  };
+}
+
 /* ==========================================================================
    PUBLIC API FOR INSTITUTES
    ========================================================================== */
 
 export async function getInstitutes() {
-  if (canUseFirestore()) {
+  if (canUseSupabaseDb()) {
     try {
-      await checkAndSeedFirestore();
-      const snapshot = await getDocs(collection(db, 'institutes'));
-      const list = [];
-      snapshot.forEach(doc => {
-        list.push({ id: doc.id, ...doc.data() });
-      });
-      return list;
+      await checkAndSeedSupabase();
+      const { data, error } = await supabase
+        .from('institutes')
+        .select('*');
+      
+      if (error) throw error;
+      return (data || []).map(mapFromSupabase);
     } catch (err) {
-      console.warn('Firestore getInstitutes failed, falling back to localStorage:', err);
+      console.warn('Supabase getInstitutes failed, falling back to localStorage:', err);
     }
   }
 
@@ -120,6 +193,26 @@ export async function getInstitutes() {
 }
 
 export async function getInstitute(idOrSlug) {
+  if (canUseSupabaseDb()) {
+    try {
+      await checkAndSeedSupabase();
+      const isId = idOrSlug.match(/^inst_\d+$/) || idOrSlug.match(/^\d+$/);
+      const queryField = isId ? 'id' : 'slug';
+      
+      const { data, error } = await supabase
+        .from('institutes')
+        .select('*')
+        .eq(queryField, idOrSlug)
+        .maybeSingle();
+
+      if (error) throw error;
+      if (data) return mapFromSupabase(data);
+    } catch (err) {
+      console.warn(`Supabase getInstitute for ${idOrSlug} failed, falling back to localStorage:`, err);
+    }
+  }
+
+  // LocalStorage Fallback
   const list = await getInstitutes();
   return list.find(inst => inst.id === idOrSlug || inst.slug === idOrSlug) || null;
 }
@@ -138,23 +231,36 @@ export async function saveInstitute(instituteData) {
     data.createdAt = new Date().toISOString();
   }
 
-  if (canUseFirestore()) {
+  if (canUseSupabaseDb()) {
     try {
-      await setDoc(doc(db, 'institutes', id), data, { merge: true });
-      
-      // If it's a new institute, also create an analytics entry in Firestore
+      const dbPayload = mapToSupabase(data);
       if (!isEdit) {
-        await setDoc(doc(db, 'instituteAnalytics', id), {
-          id,
-          views: 0,
-          whatsappClicks: 0,
-          callClicks: 0,
-          qrScans: 0
-        });
+        dbPayload.created_at = data.createdAt;
+      }
+      
+      const { error } = await supabase
+        .from('institutes')
+        .upsert(dbPayload);
+
+      if (error) throw error;
+      
+      // If it's a new institute, also create an analytics entry in Supabase
+      if (!isEdit) {
+        await supabase
+          .from('institute_analytics')
+          .insert([
+            {
+              institute_id: id,
+              views: 0,
+              whatsapp_clicks: 0,
+              call_clicks: 0,
+              qr_scans: 0
+            }
+          ]);
       }
       return data;
     } catch (err) {
-      console.warn('Firestore saveInstitute failed, falling back to localStorage:', err);
+      console.warn('Supabase saveInstitute failed, falling back to localStorage:', err);
     }
   }
 
@@ -180,13 +286,29 @@ export async function saveInstitute(instituteData) {
 }
 
 export async function deleteInstitute(id) {
-  if (canUseFirestore()) {
+  if (canUseSupabaseDb()) {
     try {
-      await deleteDoc(doc(db, 'institutes', id));
-      await deleteDoc(doc(db, 'instituteAnalytics', id));
+      // Cascading deletes on institute_analytics and analytics_events are handled by Postgres if foreign key configured,
+      // but let's delete explicitly for extra robustness.
+      await supabase
+        .from('institute_analytics')
+        .delete()
+        .eq('institute_id', id);
+        
+      await supabase
+        .from('analytics_events')
+        .delete()
+        .eq('institute_id', id);
+
+      const { error } = await supabase
+        .from('institutes')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
       return true;
     } catch (err) {
-      console.warn('Firestore deleteInstitute failed, falling back to localStorage:', err);
+      console.warn('Supabase deleteInstitute failed, falling back to localStorage:', err);
     }
   }
 
@@ -208,16 +330,21 @@ export async function deleteInstitute(id) {
    ========================================================================== */
 
 export async function getAnalytics() {
-  if (canUseFirestore()) {
+  if (canUseSupabaseDb()) {
     try {
-      const snapshot = await getDocs(collection(db, 'instituteAnalytics'));
+      const { data, error } = await supabase
+        .from('institute_analytics')
+        .select('*');
+
+      if (error) throw error;
+      
       const records = {};
-      snapshot.forEach(doc => {
-        records[doc.id] = { id: doc.id, ...doc.data() };
+      (data || []).forEach(row => {
+        records[row.institute_id] = mapAnalyticsFromSupabase(row);
       });
       return records;
     } catch (err) {
-      console.warn('Firestore getAnalytics failed, falling back to localStorage:', err);
+      console.warn('Supabase getAnalytics failed, falling back to localStorage:', err);
     }
   }
 
@@ -227,14 +354,20 @@ export async function getAnalytics() {
 }
 
 export async function getInstituteAnalytics(id) {
-  if (canUseFirestore()) {
+  if (canUseSupabaseDb()) {
     try {
-      const docSnap = await getDoc(doc(db, 'instituteAnalytics', id));
-      if (docSnap.exists()) {
-        return { id, ...docSnap.data() };
+      const { data, error } = await supabase
+        .from('institute_analytics')
+        .select('*')
+        .eq('institute_id', id)
+        .maybeSingle();
+
+      if (error) throw error;
+      if (data) {
+        return mapAnalyticsFromSupabase(data);
       }
     } catch (err) {
-      console.warn('Firestore getInstituteAnalytics failed, falling back to localStorage:', err);
+      console.warn('Supabase getInstituteAnalytics failed, falling back to localStorage:', err);
     }
   }
 
@@ -246,17 +379,32 @@ export async function getInstituteAnalytics(id) {
 
 export async function incrementAnalytics(id, eventType) {
   const field = getFieldFromEventType(eventType);
+  const dbField = mapAnalyticsFieldToDb(field);
 
-  if (canUseFirestore()) {
+  if (canUseSupabaseDb()) {
     try {
-      const docRef = doc(db, 'instituteAnalytics', id);
-      await setDoc(docRef, {
-        id,
-        [field]: increment(1)
-      }, { merge: true });
+      // Select the current values to safely increment them client-side in the absence of an RPC function
+      const { data, error } = await supabase
+        .from('institute_analytics')
+        .select('*')
+        .eq('institute_id', id)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      const currentVal = data ? (data[dbField] || 0) : 0;
+      
+      const { error: upsertError } = await supabase
+        .from('institute_analytics')
+        .upsert({
+          institute_id: id,
+          [dbField]: currentVal + 1
+        }, { onConflict: 'institute_id' });
+
+      if (upsertError) throw upsertError;
       return true;
     } catch (err) {
-      console.warn('Firestore incrementAnalytics failed, falling back to localStorage:', err);
+      console.warn('Supabase incrementAnalytics failed, falling back to localStorage:', err);
     }
   }
 

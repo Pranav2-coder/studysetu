@@ -66,7 +66,7 @@ export default function ImageGallery({ images = [], name = '', category = 'Tuiti
           {items[0]?.url ? (
             <img
               src={items[0].url}
-              alt={name}
+              alt={`${name} main facility view`}
               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-103"
             />
           ) : (
@@ -92,7 +92,7 @@ export default function ImageGallery({ images = [], name = '', category = 'Tuiti
                 {item.url ? (
                   <img
                     src={item.url}
-                    alt={`${name} thumbnail ${i + 1}`}
+                    alt={`${name} facility view ${i + 1}`}
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
                 ) : (

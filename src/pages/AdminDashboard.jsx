@@ -14,10 +14,15 @@ import {
   BarChart3,
   ExternalLink,
   Sparkles,
-  Award
+  Award,
+  Lock,
+  LogOut,
+  KeyRound,
+  ShieldCheck
 } from 'lucide-react';
 import SEOHead from '../components/SEOHead';
 import { getInstitutes, saveInstitute, deleteInstitute, getAnalytics } from '../lib/db';
+import { uploadImage } from '../lib/supabase';
 import { SectionPreloader } from '../components/Preloader';
 
 // Helper to generate slug from name
@@ -36,6 +41,14 @@ export default function AdminDashboard() {
   const [analytics, setAnalytics] = useState({});
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview'); // overview, manage, analytics, form
+
+  // Authentication State
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [authError, setAuthError] = useState('');
+  const [verifyingPassword, setVerifyingPassword] = useState(false);
 
   // Form State
   const [editingId, setEditingId] = useState(null);
@@ -60,6 +73,17 @@ export default function AdminDashboard() {
   });
   const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState('');
+  const [uploadingCover, setUploadingCover] = useState(false);
+  const [uploadingGallery, setUploadingGallery] = useState(false);
+
+  // Helper to hash password with SHA-256
+  const sha256 = async (message) => {
+    const msgBuffer = new TextEncoder().encode(message);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    return hashHex;
+  };
 
   // Load Database and Analytics
   const loadDashboardData = async () => {
@@ -77,8 +101,42 @@ export default function AdminDashboard() {
   };
 
   useEffect(() => {
-    loadDashboardData();
+    const isAuthed = localStorage.getItem('studysetu_admin_auth') === 'true';
+    if (isAuthed) {
+      setIsAuthenticated(true);
+      loadDashboardData();
+    }
+    setCheckingAuth(false);
   }, []);
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setAuthError('');
+    setVerifyingPassword(true);
+    try {
+      const hashed = await sha256(password);
+      const expectedHash = import.meta.env.VITE_ADMIN_PASSWORD_HASH;
+      if (hashed === expectedHash) {
+        localStorage.setItem('studysetu_admin_auth', 'true');
+        setIsAuthenticated(true);
+        loadDashboardData();
+      } else {
+        setAuthError('Incorrect password. Please try again.');
+      }
+    } catch (err) {
+      setAuthError('An error occurred during verification.');
+      console.error(err);
+    } finally {
+      setVerifyingPassword(false);
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('studysetu_admin_auth');
+    setIsAuthenticated(false);
+    setPassword('');
+    setAuthError('');
+  };
 
   // Merge institute with its analytics
   const getMetrics = (instId) => {
@@ -109,6 +167,53 @@ export default function AdminDashboard() {
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
+  };
+
+  const handleCoverUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingCover(true);
+    setFormError('');
+    try {
+      const result = await uploadImage(file);
+      if (result.success) {
+        setFormData(prev => ({ ...prev, coverImage: result.url }));
+      } else {
+        setFormError('Cover upload failed: ' + result.error);
+      }
+    } catch (err) {
+      setFormError('Cover upload failed: ' + err.message);
+    } finally {
+      setUploadingCover(false);
+    }
+  };
+
+  const handleGalleryUpload = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    setUploadingGallery(true);
+    setFormError('');
+    try {
+      const urls = [];
+      for (const file of files) {
+        const result = await uploadImage(file);
+        if (result.success) {
+          urls.push(result.url);
+        } else {
+          setFormError('Gallery upload failed for a file: ' + result.error);
+        }
+      }
+      if (urls.length > 0) {
+        setFormData(prev => ({ 
+          ...prev, 
+          galleryImages: prev.galleryImages ? `${prev.galleryImages}, ${urls.join(', ')}` : urls.join(', ')
+        }));
+      }
+    } catch (err) {
+      setFormError('Gallery upload failed: ' + err.message);
+    } finally {
+      setUploadingGallery(false);
+    }
   };
 
   const handleEditClick = (inst) => {
@@ -222,6 +327,110 @@ export default function AdminDashboard() {
     return viewsB - viewsA;
   });
 
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen bg-bg flex items-center justify-center">
+        <SectionPreloader message="Checking credentials..." />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <>
+        <SEOHead title="Founder Admin Login — StudySetu" />
+        <div className="min-h-screen bg-bg relative overflow-hidden flex items-center justify-center px-4 py-12">
+          {/* Decorative Animated Mesh/Blobs */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <div className="absolute w-[350px] h-[350px] rounded-full bg-accent/15 blur-[60px] top-[-10%] right-[-5%] animate-pulse" />
+            <div className="absolute w-[300px] h-[300px] rounded-full bg-primary/10 blur-[50px] bottom-[-10%] left-[-5%]" />
+          </div>
+
+          <div className="w-full max-w-md relative z-10 animate-fade-in-up">
+            {/* Logo area */}
+            <div className="text-center mb-8">
+              <div className="inline-flex p-3 rounded-2xl bg-white border border-border/50 shadow-sm mb-4">
+                <span className="font-heading text-2xl text-primary font-bold flex items-center gap-1.5">
+                  <Building2 className="text-accent" size={24} />
+                  Study<span className="text-accent">Setu</span>
+                </span>
+              </div>
+              <h2 className="font-heading text-2xl text-primary font-bold">Founder Control Center</h2>
+              <p className="text-sm text-text-muted mt-1">Please enter your access password to proceed.</p>
+            </div>
+
+            {/* Lock Card */}
+            <div className="bg-white/80 backdrop-blur-md rounded-2xl border border-border/60 shadow-lg p-6 md:p-8">
+              <div className="flex justify-center mb-6">
+                <div className="p-3.5 rounded-full bg-accent/10 text-accent ring-8 ring-accent/5">
+                  <Lock size={28} />
+                </div>
+              </div>
+
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div className="form-group relative">
+                  <label className="form-label mb-1.5 flex items-center gap-1.5">
+                    <KeyRound size={14} className="text-text-muted" />
+                    Admin Password
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="form-input w-full pr-12 font-sans"
+                      placeholder="••••••••"
+                      autoFocus
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-text-muted hover:text-primary transition-colors cursor-pointer"
+                    >
+                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                </div>
+
+                {authError && (
+                  <div className="p-3 rounded-lg bg-red-50 border border-red-100 text-red-700 text-xs font-semibold flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-red-600 flex-shrink-0 animate-ping" />
+                    {authError}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={verifyingPassword}
+                  className="btn btn-accent w-full mt-2 cursor-pointer flex items-center justify-center gap-2"
+                >
+                  {verifyingPassword ? (
+                    <>
+                      <div className="w-4.5 h-4.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Verifying...
+                    </>
+                  ) : (
+                    <>
+                      <ShieldCheck size={18} />
+                      Unlock Dashboard
+                    </>
+                  )}
+                </button>
+              </form>
+            </div>
+            
+            <div className="text-center mt-6">
+              <a href="/" className="text-xs text-text-muted hover:text-primary transition-colors font-semibold font-body">
+                ← Return to Home
+              </a>
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
       <SEOHead title="Founder Admin Dashboard — StudySetu" />
@@ -241,16 +450,27 @@ export default function AdminDashboard() {
               </p>
             </div>
             
-            {activeTab !== 'form' && (
+            <div className="flex items-center gap-3">
+              {activeTab !== 'form' && (
+                <button
+                  type="button"
+                  onClick={handleAddNewClick}
+                  className="btn btn-accent inline-flex items-center gap-2 cursor-pointer"
+                >
+                  <Plus size={18} />
+                  Add New Institute
+                </button>
+              )}
               <button
                 type="button"
-                onClick={handleAddNewClick}
-                className="btn btn-accent inline-flex items-center gap-2 cursor-pointer"
+                onClick={handleLogout}
+                className="btn btn-outline inline-flex items-center gap-2 cursor-pointer bg-white"
+                title="Logout from Admin Panel"
               >
-                <Plus size={18} />
-                Add New Institute
+                <LogOut size={18} />
+                <span className="hidden sm:inline">Logout</span>
               </button>
-            )}
+            </div>
           </div>
 
           {/* Navigation Tabs */}
@@ -725,30 +945,53 @@ export default function AdminDashboard() {
                         />
                       </div>
                     </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div className="grid grid-cols-1 gap-5">
                       <div className="form-group">
-                        <label className="form-label">Cover Image URL (Optional)</label>
+                        <label className="form-label">Cover Image</label>
                         <input
-                          type="text"
-                          name="coverImage"
-                          value={formData.coverImage}
-                          onChange={handleInputChange}
-                          className="form-input text-xs"
-                          placeholder="e.g. https://images.unsplash.com/..."
+                          type="file"
+                          accept="image/*"
+                          onChange={handleCoverUpload}
+                          disabled={uploadingCover}
+                          className="form-input text-sm p-2"
                         />
+                        {uploadingCover && <span className="text-xs text-accent mt-1 inline-block animate-pulse">Uploading cover image...</span>}
+                        {formData.coverImage && (
+                          <div className="mt-3 relative w-32 h-20 rounded overflow-hidden border border-border/40">
+                            <img src={formData.coverImage} alt="Cover Preview" className="w-full h-full object-cover" />
+                            <button type="button" onClick={() => setFormData(prev => ({...prev, coverImage: ''}))} className="absolute top-1 right-1 bg-white/80 rounded-full p-1 text-red-600 hover:bg-white cursor-pointer"><Trash2 size={12} /></button>
+                          </div>
+                        )}
                       </div>
 
                       <div className="form-group">
-                        <label className="form-label">Gallery Image URLs (Optional, Comma Separated)</label>
+                        <label className="form-label">Gallery Images</label>
                         <input
-                          type="text"
-                          name="galleryImages"
-                          value={formData.galleryImages}
-                          onChange={handleInputChange}
-                          className="form-input text-xs"
-                          placeholder="URL1, URL2, URL3"
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          onChange={handleGalleryUpload}
+                          disabled={uploadingGallery}
+                          className="form-input text-sm p-2"
                         />
+                        {uploadingGallery && <span className="text-xs text-accent mt-1 inline-block animate-pulse">Uploading gallery images...</span>}
+                        {formData.galleryImages && (
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {formData.galleryImages.split(',').map((url, idx) => {
+                              const trimmedUrl = url.trim();
+                              if (!trimmedUrl) return null;
+                              return (
+                                <div key={idx} className="relative w-20 h-20 rounded overflow-hidden border border-border/40">
+                                  <img src={trimmedUrl} alt={`Gallery Preview ${idx}`} className="w-full h-full object-cover" />
+                                  <button type="button" onClick={() => {
+                                    const newUrls = formData.galleryImages.split(',').map(u => u.trim()).filter((_, i) => i !== idx);
+                                    setFormData(prev => ({...prev, galleryImages: newUrls.join(', ')}));
+                                  }} className="absolute top-1 right-1 bg-white/80 rounded-full p-1 text-red-600 hover:bg-white cursor-pointer"><Trash2 size={12} /></button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
                     </div>
 

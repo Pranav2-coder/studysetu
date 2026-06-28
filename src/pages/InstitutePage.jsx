@@ -118,9 +118,12 @@ export default function InstitutePage() {
     name + ' ' + address
   )}`;
 
+  const seoTitle = `${name} | Best ${category === 'Tuition Classes' ? 'Tuition' : 'Coaching'} in ${area} | StudySetu`;
+  const seoDescription = `${name} is a ${category.toLowerCase()} in ${area} offering ${subjects.join(', ')} preparation. View photos, contact details, address and courses on StudySetu.`;
+
   return (
     <>
-      <SEOHead title={`${name} — ${category} in ${area} | StudySetu`} />
+      <SEOHead title={seoTitle} description={seoDescription} />
 
       <section className="section py-6 md:py-10 bg-bg min-h-screen">
         <div className="container max-w-6xl px-4">
@@ -142,12 +145,20 @@ export default function InstitutePage() {
           </div>
 
           {/* Above the Fold: Immersive Hero Banner */}
-          <div className="relative w-full h-[280px] md:h-[420px] rounded-3xl overflow-hidden shadow-lg border border-border/40 mb-8">
-            <img
-              src={coverImg}
-              alt={name}
-              className="w-full h-full object-cover"
-            />
+          <div className="relative w-full h-[280px] md:h-[420px] rounded-3xl overflow-hidden shadow-lg border border-border/40 mb-8 bg-[#F6F1E8]">
+            {coverImg ? (
+              <img
+                src={coverImg}
+                alt={`${name} main building in ${area}`}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className={`w-full h-full bg-gradient-to-br flex items-center justify-center ${isTuition ? 'from-[#C8742A]/20 to-[#E9DFD1]' : 'from-[#1F2A44]/20 to-[#E9DFD1]'}`}>
+                <span className="text-9xl font-heading text-primary/30 select-none">
+                  {name.charAt(0)}
+                </span>
+              </div>
+            )}
             {/* Ambient Dark Gradient Layer */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/45 to-black/20" />
 
