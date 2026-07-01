@@ -14,7 +14,6 @@ import {
   BarChart3,
   ExternalLink,
   Sparkles,
-  Award,
   Lock,
   LogOut,
   KeyRound,
@@ -32,14 +31,15 @@ const slugify = (text) => {
     .toLowerCase()
     .trim()
     .replace(/\s+/g, '-')           // Replace spaces with -
-    .replace(/[^\w\-]+/g, '')       // Remove all non-word chars
-    .replace(/\-\-+/g, '-');         // Replace multiple - with single -
+    .replace(/[^\w-]+/g, '')       // Remove all non-word chars
+    .replace(/--+/g, '-');         // Replace multiple - with single -
 };
 
 export default function AdminDashboard() {
   const [institutes, setInstitutes] = useState([]);
   const [analytics, setAnalytics] = useState({});
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [activeTab, setActiveTab] = useState('overview'); // overview, manage, analytics, form
 
   // Authentication State
@@ -64,6 +64,10 @@ export default function AdminDashboard() {
     fees: '',
     timings: '',
     experience: '',
+    expertise: '',
+    studentsEnrolled: '',
+    facilities: '',
+    faculty: '',
     phone: '',
     whatsapp: '',
     coverImage: '',
@@ -88,6 +92,7 @@ export default function AdminDashboard() {
   // Load Database and Analytics
   const loadDashboardData = async () => {
     setLoading(true);
+    setLoadError('');
     try {
       const instList = await getInstitutes();
       const analyticsRecords = await getAnalytics();
@@ -95,6 +100,7 @@ export default function AdminDashboard() {
       setAnalytics(analyticsRecords || {});
     } catch (err) {
       console.error('Error loading dashboard data:', err);
+      setLoadError(`Could not load dashboard data: ${err.message}`);
     } finally {
       setLoading(false);
     }
@@ -170,16 +176,32 @@ export default function AdminDashboard() {
   };
 
   const handleCoverUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    // Check limit
+    const currentCount = formData.coverImage ? formData.coverImage.split(',').filter(Boolean).length : 0;
+    if (currentCount + files.length > 2) {
+      return setFormError('You can only upload up to 2 cover images.');
+    }
+
     setUploadingCover(true);
     setFormError('');
     try {
-      const result = await uploadImage(file);
-      if (result.success) {
-        setFormData(prev => ({ ...prev, coverImage: result.url }));
-      } else {
-        setFormError('Cover upload failed: ' + result.error);
+      const urls = [];
+      for (const file of files) {
+        const result = await uploadImage(file);
+        if (result.success) {
+          urls.push(result.url);
+        } else {
+          setFormError('Cover upload failed for a file: ' + result.error);
+        }
+      }
+      if (urls.length > 0) {
+        setFormData(prev => ({
+          ...prev,
+          coverImage: prev.coverImage ? `${prev.coverImage}, ${urls.join(', ')}` : urls.join(', ')
+        }));
       }
     } catch (err) {
       setFormError('Cover upload failed: ' + err.message);
@@ -191,6 +213,13 @@ export default function AdminDashboard() {
   const handleGalleryUpload = async (e) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
+
+    // Check limit
+    const currentCount = formData.galleryImages ? formData.galleryImages.split(',').filter(Boolean).length : 0;
+    if (currentCount + files.length > 3) {
+      return setFormError('You can only upload up to 3 gallery images.');
+    }
+
     setUploadingGallery(true);
     setFormError('');
     try {
@@ -204,8 +233,8 @@ export default function AdminDashboard() {
         }
       }
       if (urls.length > 0) {
-        setFormData(prev => ({ 
-          ...prev, 
+        setFormData(prev => ({
+          ...prev,
           galleryImages: prev.galleryImages ? `${prev.galleryImages}, ${urls.join(', ')}` : urls.join(', ')
         }));
       }
@@ -225,15 +254,19 @@ export default function AdminDashboard() {
       description: inst.description || '',
       area: inst.area || '',
       address: inst.address || '',
-      subjects: inst.subjects ? inst.subjects.join(', ') : '',
-      classesCovered: inst.classesCovered ? inst.classesCovered.join(', ') : '',
+      subjects: Array.isArray(inst.subjects) ? inst.subjects.join(', ') : (inst.subjects || ''),
+      classesCovered: Array.isArray(inst.classesCovered) ? inst.classesCovered.join(', ') : (inst.classesCovered || ''),
       fees: inst.fees || '',
       timings: inst.timings || '',
       experience: inst.experience || '',
+      expertise: inst.expertise || '',
+      studentsEnrolled: inst.studentsEnrolled || '',
+      facilities: Array.isArray(inst.facilities) ? inst.facilities.join(', ') : (inst.facilities || ''),
+      faculty: inst.faculty ? (typeof inst.faculty === 'string' ? inst.faculty : JSON.stringify(inst.faculty)) : '',
       phone: inst.phone || '',
       whatsapp: inst.whatsapp || '',
       coverImage: inst.coverImage || '',
-      galleryImages: inst.images ? inst.images.join(', ') : '',
+      galleryImages: Array.isArray(inst.images) ? inst.images.join(', ') : (inst.images || ''),
       featured: inst.featured || false,
       published: inst.published ?? true
     });
@@ -256,6 +289,10 @@ export default function AdminDashboard() {
       fees: '',
       timings: '',
       experience: '',
+      expertise: '',
+      studentsEnrolled: '',
+      facilities: '',
+      faculty: '',
       phone: '',
       whatsapp: '',
       coverImage: '',
@@ -280,12 +317,17 @@ export default function AdminDashboard() {
     setFormError('');
     setFormSuccess('');
 
+    const showError = (msg) => {
+      setFormError(msg);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
     // Basic Validation
-    if (!formData.name.trim()) return setFormError('Name is required');
-    if (!formData.slug.trim()) return setFormError('Slug is required');
-    if (!formData.area.trim()) return setFormError('Area is required');
-    if (!formData.phone.trim()) return setFormError('Phone number is required');
-    if (!formData.whatsapp.trim()) return setFormError('WhatsApp number is required');
+    if (!formData.name.trim()) return showError('Name is required');
+    if (!formData.slug.trim()) return showError('Slug is required');
+    if (!formData.area.trim()) return showError('Area is required');
+    if (!formData.phone.trim()) return showError('Phone number is required');
+    if (!formData.whatsapp.trim()) return showError('WhatsApp number is required');
 
     // Parse subjects and classes covered
     const parsedSubjects = formData.subjects
@@ -297,26 +339,42 @@ export default function AdminDashboard() {
     const parsedGallery = formData.galleryImages
       ? formData.galleryImages.split(',').map(img => img.trim()).filter(Boolean)
       : [];
+    const parsedFacilities = formData.facilities
+      ? formData.facilities.split(',').map(f => f.trim()).filter(Boolean)
+      : [];
+
+    let parsedFaculty = [];
+    if (formData.faculty) {
+      try {
+        parsedFaculty = JSON.parse(formData.faculty);
+      } catch {
+        return showError('Faculty must be valid JSON format e.g. [{"name":"John","subject":"Math"}]');
+      }
+    }
 
     const payload = {
       ...formData,
       id: editingId || undefined,
+      studentsEnrolled: Number(formData.studentsEnrolled) || 0,
       subjects: parsedSubjects,
       classesCovered: parsedClasses,
+      facilities: parsedFacilities,
+      faculty: parsedFaculty,
       images: parsedGallery
     };
 
     try {
       await saveInstitute(payload);
       setFormSuccess(editingId ? 'Listing updated successfully!' : 'New institute created successfully!');
-      
+
       // Reload and redirect
       await loadDashboardData();
       setTimeout(() => {
         setActiveTab('manage');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       }, 1200);
     } catch (err) {
-      setFormError('Failed to save listing: ' + err.message);
+      showError('Failed to save listing: ' + err.message);
     }
   };
 
@@ -419,7 +477,7 @@ export default function AdminDashboard() {
                 </button>
               </form>
             </div>
-            
+
             <div className="text-center mt-6">
               <a href="/" className="text-xs text-text-muted hover:text-primary transition-colors font-semibold font-body">
                 ← Return to Home
@@ -437,7 +495,7 @@ export default function AdminDashboard() {
 
       <div className="min-h-screen bg-bg py-8">
         <div className="container max-w-6xl px-4">
-          
+
           {/* Header */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
             <div>
@@ -449,7 +507,7 @@ export default function AdminDashboard() {
                 Internal management console for listing verification and analytics tracking.
               </p>
             </div>
-            
+
             <div className="flex items-center gap-3">
               {activeTab !== 'form' && (
                 <button
@@ -485,18 +543,17 @@ export default function AdminDashboard() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`px-4 py-3 text-sm font-semibold border-b-2 flex items-center gap-2 transition-colors cursor-pointer whitespace-nowrap ${
-                    activeTab === tab.id
+                  className={`px-4 py-3 text-sm font-semibold border-b-2 flex items-center gap-2 transition-colors cursor-pointer whitespace-nowrap ${activeTab === tab.id
                       ? 'border-accent text-accent'
                       : 'border-transparent text-text-muted hover:text-primary hover:border-border'
-                  }`}
+                    }`}
                 >
                   <Icon size={16} />
                   {tab.label}
                 </button>
               );
             })}
-            
+
             {activeTab === 'form' && (
               <button
                 className="px-4 py-3 text-sm font-semibold border-b-2 border-accent text-accent flex items-center gap-2 whitespace-nowrap"
@@ -508,6 +565,12 @@ export default function AdminDashboard() {
             )}
           </div>
 
+          {loadError && (
+            <div className="p-4 mb-6 rounded-lg bg-red-50 border border-red-200 text-red-800 text-sm font-semibold">
+              {loadError}
+            </div>
+          )}
+
           {/* Loading Vibe */}
           {loading && activeTab !== 'form' ? (
             <div className="bg-white rounded-2xl border border-border/40 min-h-[300px]">
@@ -515,7 +578,7 @@ export default function AdminDashboard() {
             </div>
           ) : (
             <div className="space-y-8 animate-fade-in-up">
-              
+
               {/* ==================== OVERVIEW TAB ==================== */}
               {activeTab === 'overview' && (
                 <>
@@ -616,9 +679,8 @@ export default function AdminDashboard() {
                               <td className="py-3 text-text-muted">{inst.category}</td>
                               <td className="py-3 font-medium text-text">{inst.area}</td>
                               <td className="py-3 text-center">
-                                <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded ${
-                                  isPub ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
-                                }`}>
+                                <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded ${isPub ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                                  }`}>
                                   {isPub ? <Eye size={10} /> : <EyeOff size={10} />}
                                   {isPub ? 'Published' : 'Draft'}
                                 </span>
@@ -703,13 +765,12 @@ export default function AdminDashboard() {
                               <td className="py-3 text-right text-indigo-700 font-semibold">{metrics.callClicks || 0}</td>
                               <td className="py-3 text-right text-text-muted">{metrics.qrScans || 0} <span className="text-[9px] font-bold text-accent uppercase tracking-wider ml-1 bg-accent-light px-1.5 py-0.25 rounded">Future</span></td>
                               <td className="py-3 text-right">
-                                <span className={`inline-block font-bold px-2 py-0.5 rounded text-xs ${
-                                  Number(conversion) >= 30
+                                <span className={`inline-block font-bold px-2 py-0.5 rounded text-xs ${Number(conversion) >= 30
                                     ? 'bg-emerald-100 text-emerald-800'
                                     : Number(conversion) >= 10
-                                    ? 'bg-indigo-100 text-indigo-800'
-                                    : 'bg-surface text-text-muted'
-                                }`}>
+                                      ? 'bg-indigo-100 text-indigo-800'
+                                      : 'bg-surface text-text-muted'
+                                  }`}>
                                   {conversion}%
                                 </span>
                               </td>
@@ -749,7 +810,7 @@ export default function AdminDashboard() {
                   )}
 
                   <form onSubmit={handleFormSubmit} className="space-y-6">
-                    
+
                     {/* Basic Settings */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                       <div className="form-group">
@@ -761,9 +822,10 @@ export default function AdminDashboard() {
                           onChange={handleNameChange}
                           className="form-input"
                           placeholder="e.g. Sharma Classes"
+                          required
                         />
                       </div>
-                      
+
                       <div className="form-group">
                         <label className="form-label">URL Slug *</label>
                         <input
@@ -773,6 +835,7 @@ export default function AdminDashboard() {
                           onChange={handleInputChange}
                           className="form-input font-mono text-xs"
                           placeholder="e.g. sharma-classes-nagpur"
+                          required
                         />
                       </div>
                     </div>
@@ -802,6 +865,56 @@ export default function AdminDashboard() {
                           placeholder="e.g. 12 years"
                         />
                       </div>
+
+                      <div className="form-group">
+                        <label className="form-label">Expertise</label>
+                        <input
+                          type="text"
+                          name="expertise"
+                          value={formData.expertise}
+                          onChange={handleInputChange}
+                          className="form-input"
+                          placeholder="e.g. JEE & NEET Preparation"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                      <div className="form-group">
+                        <label className="form-label">Students Enrolled</label>
+                        <input
+                          type="number"
+                          name="studentsEnrolled"
+                          value={formData.studentsEnrolled}
+                          onChange={handleInputChange}
+                          className="form-input"
+                          placeholder="e.g. 500"
+                        />
+                      </div>
+
+                      <div className="form-group">
+                        <label className="form-label">Facilities (Comma Separated)</label>
+                        <input
+                          type="text"
+                          name="facilities"
+                          value={formData.facilities}
+                          onChange={handleInputChange}
+                          className="form-input"
+                          placeholder="e.g. AC, Wi-Fi, Library"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="form-group">
+                      <label className="form-label">Expert Faculty (JSON Format)</label>
+                      <textarea
+                        name="faculty"
+                        value={formData.faculty}
+                        onChange={handleInputChange}
+                        rows="3"
+                        className="form-input font-mono text-xs leading-relaxed"
+                        placeholder={'[{"name": "Rajesh Kumar", "subject": "Physics", "exp": "15 Yrs", "qual": "M.Tech"}]'}
+                      ></textarea>
                     </div>
 
                     {/* Detailed Metadata */}
@@ -827,6 +940,7 @@ export default function AdminDashboard() {
                           onChange={handleInputChange}
                           className="form-input"
                           placeholder="e.g. Dharampeth"
+                          required
                         />
                       </div>
 
@@ -930,6 +1044,7 @@ export default function AdminDashboard() {
                           onChange={handleInputChange}
                           className="form-input"
                           placeholder="e.g. 9371742672"
+                          required
                         />
                       </div>
 
@@ -942,30 +1057,43 @@ export default function AdminDashboard() {
                           onChange={handleInputChange}
                           className="form-input"
                           placeholder="e.g. 919371742672"
+                          required
                         />
                       </div>
                     </div>
                     <div className="grid grid-cols-1 gap-5">
                       <div className="form-group">
-                        <label className="form-label">Cover Image</label>
+                        <label className="form-label">Cover Images (Max 2)</label>
                         <input
                           type="file"
                           accept="image/*"
+                          multiple
                           onChange={handleCoverUpload}
                           disabled={uploadingCover}
                           className="form-input text-sm p-2"
                         />
-                        {uploadingCover && <span className="text-xs text-accent mt-1 inline-block animate-pulse">Uploading cover image...</span>}
+                        {uploadingCover && <span className="text-xs text-accent mt-1 inline-block animate-pulse">Uploading cover images...</span>}
                         {formData.coverImage && (
-                          <div className="mt-3 relative w-32 h-20 rounded overflow-hidden border border-border/40">
-                            <img src={formData.coverImage} alt="Cover Preview" className="w-full h-full object-cover" />
-                            <button type="button" onClick={() => setFormData(prev => ({...prev, coverImage: ''}))} className="absolute top-1 right-1 bg-white/80 rounded-full p-1 text-red-600 hover:bg-white cursor-pointer"><Trash2 size={12} /></button>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {formData.coverImage.split(',').map((url, idx) => {
+                              const trimmedUrl = url.trim();
+                              if (!trimmedUrl) return null;
+                              return (
+                                <div key={idx} className="relative w-32 h-20 rounded overflow-hidden border border-border/40">
+                                  <img src={trimmedUrl} alt={`Cover Preview ${idx}`} className="w-full h-full object-cover" />
+                                  <button type="button" onClick={() => {
+                                    const newUrls = formData.coverImage.split(',').map(u => u.trim()).filter((_, i) => i !== idx);
+                                    setFormData(prev => ({ ...prev, coverImage: newUrls.join(', ') }));
+                                  }} className="absolute top-1 right-1 bg-white/80 rounded-full p-1 text-red-600 hover:bg-white cursor-pointer"><Trash2 size={12} /></button>
+                                </div>
+                              );
+                            })}
                           </div>
                         )}
                       </div>
 
                       <div className="form-group">
-                        <label className="form-label">Gallery Images</label>
+                        <label className="form-label">Gallery Images (Max 3)</label>
                         <input
                           type="file"
                           accept="image/*"
@@ -985,7 +1113,7 @@ export default function AdminDashboard() {
                                   <img src={trimmedUrl} alt={`Gallery Preview ${idx}`} className="w-full h-full object-cover" />
                                   <button type="button" onClick={() => {
                                     const newUrls = formData.galleryImages.split(',').map(u => u.trim()).filter((_, i) => i !== idx);
-                                    setFormData(prev => ({...prev, galleryImages: newUrls.join(', ')}));
+                                    setFormData(prev => ({ ...prev, galleryImages: newUrls.join(', ') }));
                                   }} className="absolute top-1 right-1 bg-white/80 rounded-full p-1 text-red-600 hover:bg-white cursor-pointer"><Trash2 size={12} /></button>
                                 </div>
                               );

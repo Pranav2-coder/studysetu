@@ -9,6 +9,7 @@ const canUseSupabaseDb = () => {
 // LocalStorage Keys
 const INST_KEY = 'edufinder_institutes';
 const ANALYTICS_KEY = 'edufinder_analytics';
+const REVIEWS_KEY = 'edufinder_reviews';
 
 // Initialize LocalStorage with seed data if empty
 const initLocalStorage = () => {
@@ -28,6 +29,9 @@ const initLocalStorage = () => {
     });
     localStorage.setItem(ANALYTICS_KEY, JSON.stringify(initialAnalytics));
   }
+  if (!localStorage.getItem(REVIEWS_KEY)) {
+    localStorage.setItem(REVIEWS_KEY, JSON.stringify([]));
+  }
 };
 
 // Always make sure LocalStorage is initialized on load
@@ -46,7 +50,7 @@ async function checkAndSeedSupabase() {
     
     if (count === 0) {
       console.log('Supabase institutes table is empty. Seeding seedData...');
-      
+
       // Map and insert institutes
       const dbInstitutes = seedInstitutes.map(inst => ({
         ...mapToSupabase(inst),
@@ -120,10 +124,14 @@ function mapFromSupabase(dbInst) {
     feesValue: dbInst.fees_value,
     timings: dbInst.timings,
     experience: dbInst.experience,
+    expertise: dbInst.expertise || '',
     phone: dbInst.phone,
     whatsapp: dbInst.whatsapp,
     coverImage: dbInst.cover_image,
     images: dbInst.images || [],
+    studentsEnrolled: dbInst.students_enrolled || 0,
+    facilities: dbInst.facilities || [],
+    faculty: dbInst.faculty || [],
     featured: dbInst.featured,
     published: dbInst.published,
     createdAt: dbInst.created_at,
@@ -147,10 +155,14 @@ function mapToSupabase(inst) {
     fees_value: inst.feesValue !== undefined ? inst.feesValue : (parseInt(inst.fees) || 0),
     timings: inst.timings || null,
     experience: inst.experience || null,
+    expertise: inst.expertise || null,
     phone: inst.phone,
     whatsapp: inst.whatsapp,
     cover_image: inst.coverImage || null,
     images: inst.images || [],
+    students_enrolled: inst.studentsEnrolled || 0,
+    facilities: inst.facilities || [],
+    faculty: inst.faculty || [],
     featured: inst.featured || false,
     published: inst.published ?? true,
     updated_at: new Date().toISOString(),
@@ -232,39 +244,39 @@ export async function saveInstitute(instituteData) {
   }
 
   if (canUseSupabaseDb()) {
-    try {
-      const dbPayload = mapToSupabase(data);
-      if (!isEdit) {
-        dbPayload.created_at = data.createdAt;
-      }
-      
-      const { error } = await supabase
-        .from('institutes')
-        .upsert(dbPayload);
-
-      if (error) throw error;
-      
-      // If it's a new institute, also create an analytics entry in Supabase
-      if (!isEdit) {
-        await supabase
-          .from('institute_analytics')
-          .insert([
-            {
-              institute_id: id,
-              views: 0,
-              whatsapp_clicks: 0,
-              call_clicks: 0,
-              qr_scans: 0
-            }
-          ]);
-      }
-      return data;
-    } catch (err) {
-      console.warn('Supabase saveInstitute failed, falling back to localStorage:', err);
+    const dbPayload = mapToSupabase(data);
+    if (!isEdit) {
+      dbPayload.created_at = data.createdAt;
     }
+
+    const { error } = await supabase
+      .from('institutes')
+      .upsert(dbPayload);
+
+    if (error) {
+      throw new Error(`Supabase could not save the institute: ${error.message}`);
+    }
+
+    if (!isEdit) {
+      const { error: analyticsError } = await supabase
+        .from('institute_analytics')
+        .upsert({
+          institute_id: id,
+          views: 0,
+          whatsapp_clicks: 0,
+          call_clicks: 0,
+          qr_scans: 0
+        }, { onConflict: 'institute_id', ignoreDuplicates: true });
+
+      if (analyticsError) {
+        console.warn('Institute saved, but analytics initialization failed:', analyticsError);
+      }
+    }
+
+    return data;
   }
 
-  // LocalStorage Fallback
+  // LocalStorage is used only when Supabase is not configured.
   initLocalStorage();
   const list = JSON.parse(localStorage.getItem(INST_KEY));
   const idx = list.findIndex(inst => inst.id === id);
@@ -337,7 +349,7 @@ export async function getAnalytics() {
         .select('*');
 
       if (error) throw error;
-      
+
       const records = {};
       (data || []).forEach(row => {
         records[row.institute_id] = mapAnalyticsFromSupabase(row);
@@ -417,4 +429,81 @@ export async function incrementAnalytics(id, eventType) {
   analytics[id][field] = (analytics[id][field] || 0) + 1;
   localStorage.setItem(ANALYTICS_KEY, JSON.stringify(analytics));
   return true;
+}
+
+/* ==========================================================================
+   PUBLIC API FOR REVIEWS
+   ========================================================================== */
+
+export async function getReviews(instituteId) {
+  if (canUseSupabaseDb()) {
+    try {
+      const { data, error } = await supabase
+        .from('institute_reviews')
+        .select('*')
+        .eq('institute_id', instituteId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      return (data || []).map(row => ({
+        id: row.id,
+        instituteId: row.institute_id,
+        parentName: row.parent_name,
+        studentContext: row.student_context,
+        text: row.review_text,
+        rating: row.rating,
+        date: new Date(row.created_at).toLocaleDateString(),
+        img: row.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(row.parent_name)}&background=random`,
+        createdAt: row.created_at
+      }));
+    } catch (err) {
+      console.warn('Supabase getReviews failed, falling back to localStorage:', err);
+    }
+  }
+
+  // LocalStorage Fallback
+  initLocalStorage();
+  const allReviews = JSON.parse(localStorage.getItem(REVIEWS_KEY)) || [];
+  return allReviews
+    .filter(r => r.instituteId === instituteId)
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+}
+
+export async function addReview(reviewData) {
+  const newReview = {
+    ...reviewData,
+    id: `rev_${Date.now()}`,
+    createdAt: new Date().toISOString(),
+    date: new Date().toLocaleDateString(),
+    img: `https://ui-avatars.com/api/?name=${encodeURIComponent(reviewData.parentName)}&background=random`
+  };
+
+  if (canUseSupabaseDb()) {
+    try {
+      const { error } = await supabase
+        .from('institute_reviews')
+        .insert([{
+          institute_id: reviewData.instituteId,
+          parent_name: reviewData.parentName,
+          student_context: reviewData.studentContext,
+          review_text: reviewData.text,
+          rating: reviewData.rating,
+          avatar_url: newReview.img,
+          created_at: newReview.createdAt
+        }]);
+
+      if (error) throw error;
+      return newReview;
+    } catch (err) {
+      console.warn('Supabase addReview failed, falling back to localStorage:', err);
+    }
+  }
+
+  // LocalStorage Fallback
+  initLocalStorage();
+  const allReviews = JSON.parse(localStorage.getItem(REVIEWS_KEY)) || [];
+  allReviews.push(newReview);
+  localStorage.setItem(REVIEWS_KEY, JSON.stringify(allReviews));
+  return newReview;
 }

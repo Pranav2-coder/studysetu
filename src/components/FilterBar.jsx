@@ -1,92 +1,49 @@
-import { categories, areas, allSubjects, budgetRanges } from '../lib/seedData';
+
+
+// We map categories to standard chips, and add a few explicit ones based on requirements
+const QUICK_FILTERS = [
+  'All',
+  'School Tuition',
+  'JEE',
+  'NEET',
+  'Commerce',
+  'Computer',
+  'English Speaking',
+  'Home Tuition'
+];
 
 export default function FilterBar({ filters, onFilterChange }) {
-  const handleChange = (key) => (e) => {
-    onFilterChange({ ...filters, [key]: e.target.value });
-  };
+  const currentFilter = filters.category || 'All';
 
-  const hasActiveFilters =
-    filters.category || filters.area || filters.subject || filters.budgetRange;
-
-  const clearFilters = () => {
-    onFilterChange({ category: '', area: '', subject: '', budgetRange: '' });
+  const handleChipClick = (chipName) => {
+    if (chipName === 'All') {
+      onFilterChange({ ...filters, category: '' });
+    } else {
+      // Map back to standard category if needed, but for MVP let's assume it maps directly to category
+      onFilterChange({ ...filters, category: chipName });
+    }
   };
 
   return (
-    <div className="bg-white rounded-xl border border-border p-4 md:p-5">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        {/* Category */}
-        <select
-          className="form-input form-select"
-          value={filters.category}
-          onChange={handleChange('category')}
-          aria-label="Filter by category"
-        >
-          <option value="">All Categories</option>
-          {categories.map((cat) => (
-            <option key={cat} value={cat}>
-              {cat}
-            </option>
-          ))}
-        </select>
-
-        {/* Area */}
-        <select
-          className="form-input form-select"
-          value={filters.area}
-          onChange={handleChange('area')}
-          aria-label="Filter by area"
-        >
-          <option value="">All Areas</option>
-          {areas.map((a) => (
-            <option key={a} value={a}>
-              {a}
-            </option>
-          ))}
-        </select>
-
-        {/* Subject */}
-        <select
-          className="form-input form-select"
-          value={filters.subject}
-          onChange={handleChange('subject')}
-          aria-label="Filter by subject"
-        >
-          <option value="">All Subjects</option>
-          {allSubjects.map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
-          ))}
-        </select>
-
-        {/* Budget */}
-        <select
-          className="form-input form-select"
-          value={filters.budgetRange}
-          onChange={handleChange('budgetRange')}
-          aria-label="Filter by budget"
-        >
-          <option value="">Any Budget</option>
-          {budgetRanges.map((b) => (
-            <option key={b.label} value={b.label}>
-              {b.label}
-            </option>
-          ))}
-        </select>
+    <div className="w-full overflow-x-auto hide-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0 py-2">
+      <div className="flex items-center gap-2.5 whitespace-nowrap min-w-max pb-1">
+        {QUICK_FILTERS.map((chip) => {
+          const isSelected = currentFilter === chip;
+          return (
+            <button
+              key={chip}
+              type="button"
+              onClick={() => handleChipClick(chip)}
+              className={`px-5 py-2.5 rounded-full text-sm font-semibold transition-all duration-300 border shadow-sm ${isSelected
+                  ? 'bg-accent text-white border-accent shadow-[0_4px_12px_rgba(200,116,42,0.25)]'
+                  : 'bg-white text-text-muted border-border/60 hover:border-border hover:bg-bg/50'
+                }`}
+            >
+              {chip}
+            </button>
+          );
+        })}
       </div>
-
-      {hasActiveFilters && (
-        <div className="mt-3 flex justify-end">
-          <button
-            type="button"
-            onClick={clearFilters}
-            className="text-sm text-accent font-semibold hover:underline cursor-pointer"
-          >
-            Clear Filters
-          </button>
-        </div>
-      )}
     </div>
   );
 }

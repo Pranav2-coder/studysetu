@@ -41,15 +41,26 @@ CREATE TABLE IF NOT EXISTS public.institutes (
     fees_value NUMERIC DEFAULT 0,
     timings TEXT,
     experience TEXT,
+    expertise TEXT,
     phone TEXT,
     whatsapp TEXT,
     cover_image TEXT,
     images TEXT[] DEFAULT '{}',
+    students_enrolled NUMERIC DEFAULT 0,
+    facilities TEXT[] DEFAULT '{}',
+    faculty JSONB DEFAULT '[]'::jsonb,
     featured BOOLEAN DEFAULT false,
     published BOOLEAN DEFAULT true,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
+
+-- Keep existing projects in sync when this script is run again.
+ALTER TABLE public.institutes
+    ADD COLUMN IF NOT EXISTS expertise TEXT,
+    ADD COLUMN IF NOT EXISTS students_enrolled NUMERIC DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS facilities TEXT[] DEFAULT '{}',
+    ADD COLUMN IF NOT EXISTS faculty JSONB DEFAULT '[]'::jsonb;
 
 -- 4. Create Institute Analytics Table
 CREATE TABLE IF NOT EXISTS public.institute_analytics (

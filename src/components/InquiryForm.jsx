@@ -45,8 +45,11 @@ export default function InquiryForm({ instituteId, instituteName }) {
     return newErrors;
   }
 
+  const [apiError, setApiError] = useState(null);
+
   async function handleSubmit(e) {
     e.preventDefault();
+    setApiError(null);
     const newErrors = validate();
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -67,6 +70,7 @@ export default function InquiryForm({ instituteId, instituteName }) {
       }, 4000);
     } catch (err) {
       console.error('Submission error:', err);
+      setApiError('Failed to submit inquiry. Please check your connection and try again.');
     } finally {
       setSubmitting(false);
     }
@@ -196,6 +200,12 @@ export default function InquiryForm({ instituteId, instituteName }) {
           ))}
         </select>
       </div>
+
+      {apiError && (
+        <div className="bg-error/10 text-error p-3 rounded-lg text-sm mb-4">
+          {apiError}
+        </div>
+      )}
 
       <button
         type="submit"
