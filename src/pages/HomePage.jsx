@@ -1,17 +1,22 @@
 import { Link } from 'react-router';
 import { ArrowRight } from 'lucide-react';
 import SEOHead from '../components/SEOHead';
+import { generateWebSiteSchema, generateOrganizationSchema } from '../lib/seo';
 import HeroSection from '../components/HeroSection';
 import HowItWorks from '../components/HowItWorks';
 import FeaturedInstitutes from '../components/FeaturedInstitutes';
 import WhyTrustUs from '../components/WhyTrustUs';
 
 export default function HomePage() {
+  const schema = [generateWebSiteSchema(), generateOrganizationSchema()];
+
   return (
-    <>
+    <main>
       <SEOHead
         title="StudySetu — Find Tuition & Computer Classes in Nagpur"
         description="Compare tuition classes and computer training institutes in Nagpur. No spam calls."
+        url="/"
+        schema={schema}
       />
 
       <HeroSection />
@@ -41,6 +46,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-    </>
+    </main>
   );
 }

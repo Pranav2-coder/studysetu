@@ -1,4 +1,4 @@
-export default function SEOHead({ title, description, url, type = 'website', image = 'https://studysetu.com/studysetu-logo.png', schema = null }) {
+export default function SEO({ title, description, url, type = 'website', image = 'https://studysetu.com/studysetu-logo.png', schema = null }) {
   const fullTitle = title === 'StudySetu' ? title : `${title} | StudySetu`;
   const canonicalUrl = url ? `https://studysetu.com${url}` : 'https://studysetu.com';
 

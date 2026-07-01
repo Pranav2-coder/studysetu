@@ -7,11 +7,11 @@ import {
 import SEOHead from '../components/SEOHead';
 import ImageGallery from '../components/ImageGallery';
 import InstituteCard, { getCoverImage } from '../components/InstituteCard';
+import OptimizedImage from '../components/OptimizedImage';
 import { ProfileSkeleton } from '../components/Preloader';
 import { getInstitute, getInstitutes, getReviews, addReview, getInstituteAnalytics } from '../lib/db';
 import { trackEvent } from '../lib/analytics';
-
-
+import { generateLocalBusinessSchema, generateFAQSchema, generateBreadcrumbSchema } from '../lib/seo';
 
 const MOCK_REVIEWS = [
   { parent: 'Rakesh Verma', student: 'Student in 10th', text: 'Excellent teaching methodology. My son improved his scores significantly in just 3 months.', date: '2 weeks ago', img: 'https://i.pravatar.cc/150?u=4', rating: 5 },
@@ -113,9 +113,28 @@ export default function InstitutePage() {
   const profileViews = analytics.views;
   const mapSearchUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(name + ' ' + address)}`;
 
+  // Generate Schemas
+  const localBusinessSchema = generateLocalBusinessSchema(institute);
+  const breadcrumbSchema = generateBreadcrumbSchema([
+    { name: 'Home', url: 'https://studysetu.com/' },
+    { name: 'Browse', url: 'https://studysetu.com/browse' },
+    { name: name, url: `https://studysetu.com/institutes/${slug}` }
+  ]);
+  const faqSchema = generateFAQSchema([
+    { question: `What subjects are taught at ${name}?`, answer: subjects.join(', ') },
+    { question: `Where is ${name} located?`, answer: address },
+    { question: `What are the monthly fees at ${name}?`, answer: fees }
+  ]);
+  const schema = [localBusinessSchema, breadcrumbSchema, faqSchema].filter(Boolean);
+
   return (
-    <div className="bg-bg min-h-screen pb-24">
-      <SEOHead title={`${name} | StudySetu`} description={`View profile for ${name} in ${area}`} />
+    <main className="bg-bg min-h-screen pb-24">
+      <SEOHead 
+        title={`${name} | StudySetu`} 
+        description={`Find fees, contact details, reviews, and subjects for ${name} in ${area}. Verified tuition classes in Nagpur.`} 
+        url={`/institutes/${slug}`}
+        schema={schema}
+      />
 
       {/* Sticky Header */}
       <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-white/90 backdrop-blur-md shadow-sm py-3' : 'bg-transparent py-4'}`}>
@@ -136,12 +155,13 @@ export default function InstitutePage() {
       <div className="relative w-full h-[320px] overflow-hidden bg-[#1F2A44]">
         {displayImages.length > 0 ? (
           displayImages.map((imgUrl, idx) => (
-            <img
+            <OptimizedImage
               key={idx}
               src={imgUrl}
-              alt={`${name} image ${idx + 1}`}
+              alt={`${name} classroom and facilities in ${area} image ${idx + 1}`}
               className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${idx === currentImageIndex ? 'opacity-100 z-10' : 'opacity-0 z-0'
                 }`}
+              priority={idx === 0}
             />
           ))
         ) : (
@@ -169,9 +189,9 @@ export default function InstitutePage() {
         </div>
       </div>
 
-      <div className="px-4 -mt-10 relative z-40 space-y-5">
+      <article className="px-4 -mt-10 relative z-40 space-y-5">
         {/* Floating Info Card */}
-        <div className="bg-white rounded-[22px] p-5 shadow-soft border border-border/40">
+        <header className="bg-white rounded-[22px] p-5 shadow-soft border border-border/40">
           <h1 className="font-heading text-2xl text-primary font-bold leading-tight mb-1">{name}</h1>
           <p className="text-sm text-text-muted mb-4">{subjects.join(', ')}</p>
 
@@ -189,7 +209,7 @@ export default function InstitutePage() {
               <span className="text-[11px] text-text-muted">Profile Views</span>
             </div>
           </div>
-        </div>
+        </header>
 
         {/* Action Buttons */}
         <div className="grid grid-cols-3 gap-3">
@@ -377,7 +397,7 @@ export default function InstitutePage() {
             </div>
           </div>
         )}
-      </div>
+      </article>
 
       {/* Floating Bottom CTA */}
       <div className="fixed bottom-4 left-4 right-4 z-40 lg:hidden">
@@ -429,6 +449,6 @@ export default function InstitutePage() {
           </div>
         </div>
       )}
-    </div>
+    </main>
   );
 }

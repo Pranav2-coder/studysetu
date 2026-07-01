@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Search, MapPin, ArrowUpDown, ChevronDown } from 'lucide-react';
 import SEOHead from '../components/SEOHead';
 import InstituteCard from '../components/InstituteCard';
@@ -37,29 +37,41 @@ export default function BrowsePage() {
     loadBrowseData();
   }, []);
 
-  const results = institutes.filter(inst => {
-    if (filters.category && filters.category !== 'All' && inst.category !== filters.category) return false;
-    if (filters.area && inst.area !== filters.area) return false;
-    if (filters.subject && !inst.subjects.includes(filters.subject)) return false;
-    if (filters.budgetRange) {
-      const range = budgetRanges.find(r => r.label === filters.budgetRange);
-      if (range) {
-        const val = inst.feesValue !== undefined ? inst.feesValue : (parseInt(inst.fees) || 0);
-        if (val < range.min || val >= range.max) return false;
+  const results = useMemo(() => {
+    return institutes.filter(inst => {
+      if (filters.category && filters.category !== 'All' && inst.category !== filters.category) return false;
+      if (filters.area && inst.area !== filters.area) return false;
+      if (filters.subject && !inst.subjects.includes(filters.subject)) return false;
+      if (filters.budgetRange) {
+        const range = budgetRanges.find(r => r.label === filters.budgetRange);
+        if (range) {
+          const val = inst.feesValue !== undefined ? inst.feesValue : (parseInt(inst.fees) || 0);
+          if (val < range.min || val >= range.max) return false;
+        }
       }
-    }
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      return inst.name.toLowerCase().includes(q) ||
-        inst.subjects.some(s => s.toLowerCase().includes(q)) ||
-        inst.area.toLowerCase().includes(q);
-    }
-    return true;
-  });
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        return inst.name.toLowerCase().includes(q) ||
+          inst.subjects.some(s => s.toLowerCase().includes(q)) ||
+          inst.area.toLowerCase().includes(q);
+      }
+      return true;
+    });
+  }, [institutes, filters, searchQuery]);
+
+  const dynamicTitle = searchQuery 
+    ? `Search Results for "${searchQuery}" — StudySetu`
+    : filters.area 
+    ? `Institutes in ${filters.area} — StudySetu` 
+    : "Browse Institutes — StudySetu";
 
   return (
     <>
-      <SEOHead title="Browse Institutes — StudySetu" />
+      <SEOHead 
+        title={dynamicTitle} 
+        description="Browse and compare tuition classes and computer training institutes in Nagpur." 
+        url="/browse"
+      />
 
       {/* Sticky Compact Header */}
       <header className="sticky top-16 z-40 bg-bg/90 backdrop-glass px-4 pt-1 pb-2 flex flex-col gap-3">

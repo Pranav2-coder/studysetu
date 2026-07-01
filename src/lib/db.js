@@ -184,7 +184,15 @@ function mapAnalyticsFromSupabase(dbAnal) {
    PUBLIC API FOR INSTITUTES
    ========================================================================== */
 
-export async function getInstitutes() {
+let cachedInstitutes = null;
+let lastFetchTime = 0;
+const CACHE_TTL = 1000 * 60 * 5; // 5 minutes cache
+
+export async function getInstitutes(forceRefresh = false) {
+  if (!forceRefresh && cachedInstitutes && (Date.now() - lastFetchTime < CACHE_TTL)) {
+    return cachedInstitutes;
+  }
+
   if (canUseSupabaseDb()) {
     try {
       await checkAndSeedSupabase();
@@ -193,7 +201,9 @@ export async function getInstitutes() {
         .select('*');
       
       if (error) throw error;
-      return (data || []).map(mapFromSupabase);
+      cachedInstitutes = (data || []).map(mapFromSupabase);
+      lastFetchTime = Date.now();
+      return cachedInstitutes;
     } catch (err) {
       console.warn('Supabase getInstitutes failed, falling back to localStorage:', err);
     }
@@ -201,7 +211,9 @@ export async function getInstitutes() {
 
   // LocalStorage Fallback
   initLocalStorage();
-  return JSON.parse(localStorage.getItem(INST_KEY));
+  cachedInstitutes = JSON.parse(localStorage.getItem(INST_KEY));
+  lastFetchTime = Date.now();
+  return cachedInstitutes;
 }
 
 export async function getInstitute(idOrSlug) {
