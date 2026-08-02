@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router';
 import {
   Phone, MessageCircle, MapPin, Clock, Share, ArrowLeft, ShieldCheck, Eye, Globe,
-  Users, Navigation, Star, ChevronDown, ChevronUp, Image as ImageIcon, X
+  Users, Navigation, Star, ChevronDown, ChevronUp, Image as ImageIcon, X, Sparkles, IndianRupee, CalendarClock
 } from 'lucide-react';
 import SEOHead from '../components/SEOHead';
 import ImageGallery from '../components/ImageGallery';
@@ -152,38 +152,45 @@ export default function InstitutePage() {
       </header>
 
       {/* Hero Image Slider */}
-      <div className="relative w-full h-[320px] overflow-hidden bg-[#1F2A44]">
+      <div className="relative w-full h-[180px] md:h-[240px] lg:h-[300px] overflow-hidden bg-surface">
         {displayImages.length > 0 ? (
           displayImages.map((imgUrl, idx) => (
-            <OptimizedImage
+            <div
               key={idx}
-              src={imgUrl}
-              alt={`${name} classroom and facilities in ${area} image ${idx + 1}`}
-              className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${idx === currentImageIndex ? 'opacity-100 z-10' : 'opacity-0 z-0'
-                }`}
-              priority={idx === 0}
-            />
+              className={`absolute inset-0 w-full h-full transition-opacity duration-1000 ${
+                idx === currentImageIndex ? 'opacity-100 z-10' : 'opacity-0 z-0'
+              }`}
+            >
+              <OptimizedImage
+                src={imgUrl}
+                alt={`${name} classroom and facilities in ${area} image ${idx + 1}`}
+                className="absolute inset-0 w-full h-full object-cover object-center"
+                priority={idx === 0}
+              />
+            </div>
           ))
         ) : (
-          <div className="w-full h-full bg-gradient-to-br from-primary/80 to-primary flex items-center justify-center">
-            <span className="text-8xl font-heading text-white/10">{name.charAt(0)}</span>
+          <div className="w-full h-full bg-gradient-to-r from-primary/80 to-primary flex items-center justify-center">
+            <span className="text-6xl font-heading text-white/20">{name.charAt(0)}</span>
           </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent z-20 pointer-events-none" />
+        
+        {/* Soft dark gradient at the top for the header buttons and bottom for badges */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/60 z-20 pointer-events-none" />
 
-        {/* Overlay Info */}
-        <div className="absolute bottom-[60px] left-4 right-4 flex justify-between items-end z-30 pointer-events-none">
+        {/* Overlay Info - Positioned above the -mt-10 overlap from the content below */}
+        <div className="absolute bottom-[48px] left-4 right-4 flex justify-between items-end z-30 pointer-events-none">
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-2">
               <span className="bg-success text-white px-2 py-1 rounded-full text-[10px] font-bold tracking-wide flex items-center gap-1 shadow-sm">
                 <ShieldCheck size={12} /> VERIFIED
               </span>
-              <span className="bg-black/40 backdrop-blur-sm text-white px-2 py-1 rounded-full text-[10px] font-bold flex items-center gap-1">
+              <span className="bg-black/50 backdrop-blur-sm text-white px-2 py-1 rounded-full text-[10px] font-bold flex items-center gap-1">
                 <MapPin size={12} className="text-accent" /> {area}
               </span>
             </div>
           </div>
-          <div className="bg-black/40 backdrop-blur-sm px-2 py-1 rounded-full text-white text-[11px] font-medium flex items-center gap-1">
+          <div className="bg-black/50 backdrop-blur-sm px-2 py-1 rounded-full text-white text-[11px] font-medium flex items-center gap-1">
             <ImageIcon size={12} /> {displayImages.length > 0 ? `${currentImageIndex + 1}/${displayImages.length}` : '1/1'}
           </div>
         </div>
@@ -227,31 +234,31 @@ export default function InstitutePage() {
           </a>
         </div>
 
-        {/* Details Card */}
-        <div className="bg-white rounded-[22px] p-5 shadow-soft border border-border/40 space-y-4">
+        {/* Details Grid (Fine Dine / Editorial Style) */}
+        <div className="grid grid-cols-2 gap-3">
           {expertise && (
-            <div className="flex justify-between items-center border-b border-border/40 pb-3">
-              <span className="text-sm font-semibold text-text-muted">Expertise</span>
-              <span className="text-[13px] font-bold text-primary text-right max-w-[60%]">{expertise}</span>
+            <div className="bg-white rounded-[22px] p-5 shadow-soft border border-border/40 flex flex-col justify-center items-center text-center">
+              <Sparkles size={20} className="text-accent mb-2 opacity-80" />
+              <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest mb-1.5">Expertise</span>
+              <span className="font-heading text-lg text-primary">{expertise}</span>
             </div>
           )}
-          <div className="flex justify-between items-center border-b border-border/40 pb-3">
-            <span className="text-sm font-semibold text-text-muted">Monthly Fees</span>
-            <span className="text-base font-bold text-primary">{fees}</span>
+          <div className="bg-white rounded-[22px] p-5 shadow-soft border border-border/40 flex flex-col justify-center items-center text-center">
+            <IndianRupee size={20} className="text-accent mb-2 opacity-80" />
+            <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest mb-1.5">Monthly Fees</span>
+            <span className="font-heading text-xl text-primary">{fees}</span>
           </div>
-          <div className="flex justify-between items-center border-b border-border/40 pb-3">
-            <span className="text-sm font-semibold text-text-muted">Class Timings</span>
-            <span className="text-[13px] font-bold text-primary">{timings}</span>
-          </div>
-          <div className="flex justify-between items-center pb-1">
-            <span className="text-sm font-semibold text-text-muted">Days Open</span>
-            <span className="text-[13px] font-bold text-primary">Mon - Sat</span>
+          <div className="bg-white rounded-[22px] p-5 shadow-soft border border-border/40 flex flex-col justify-center items-center text-center col-span-2">
+            <CalendarClock size={20} className="text-accent mb-2 opacity-80" />
+            <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest mb-1.5">Timings & Schedule</span>
+            <span className="text-base font-semibold text-primary">{timings}</span>
+            <span className="text-[11px] font-bold text-text-muted mt-1.5 uppercase tracking-widest">Open Mon - Sat</span>
           </div>
         </div>
 
         {/* About */}
         <div className="bg-white rounded-[22px] p-5 shadow-soft border border-border/40">
-          <h2 className="text-lg font-bold text-primary mb-3">About Institute</h2>
+          <h2 className="font-heading text-2xl text-primary mb-3">About Institute</h2>
           <div className="relative">
             <p className={`text-sm text-text-muted leading-relaxed ${!aboutExpanded && 'line-clamp-3'}`}>
               {description}
@@ -267,14 +274,14 @@ export default function InstitutePage() {
 
         {/* Subjects & Classes */}
         <div className="bg-white rounded-[22px] p-5 shadow-soft border border-border/40">
-          <h2 className="text-lg font-bold text-primary mb-4">Subjects Taught</h2>
+          <h2 className="font-heading text-2xl text-primary mb-4">Subjects Taught</h2>
           <div className="flex flex-wrap gap-2 mb-6">
             {subjects.map(s => (
               <span key={s} className="bg-[#F6F1E8] text-primary px-3 py-1.5 rounded-full text-[13px] font-medium border border-border/50">{s}</span>
             ))}
           </div>
 
-          <h2 className="text-lg font-bold text-primary mb-4">Classes Covered</h2>
+          <h2 className="font-heading text-2xl text-primary mb-4">Classes Covered</h2>
           <div className="flex flex-wrap gap-2">
             {classesCovered.map(c => (
               <span key={c} className="bg-white border-2 border-border/60 text-primary px-4 py-1.5 rounded-full text-[13px] font-bold shadow-sm">{c}</span>
@@ -285,7 +292,7 @@ export default function InstitutePage() {
         {/* Facilities */}
         {facilities && facilities.length > 0 && (
           <div className="bg-white rounded-[22px] p-5 shadow-soft border border-border/40">
-            <h2 className="text-lg font-bold text-primary mb-4">Facilities</h2>
+            <h2 className="font-heading text-2xl text-primary mb-4">Facilities</h2>
             <div className="grid grid-cols-2 gap-3">
               {facilities.map(f => (
                 <div key={f} className="flex items-center gap-2 p-2.5 bg-[#F6F1E8] rounded-xl">
@@ -303,7 +310,7 @@ export default function InstitutePage() {
         {faculty && faculty.length > 0 && (
           <div>
             <div className="flex justify-between items-end mb-4 px-1">
-              <h2 className="text-lg font-bold text-primary">Expert Faculty</h2>
+              <h2 className="font-heading text-2xl text-primary">Expert Faculty</h2>
             </div>
             <div className="flex overflow-x-auto gap-4 pb-4 -mx-4 px-4 snap-x hide-scrollbar">
               {faculty.map((f, i) => (
@@ -325,7 +332,7 @@ export default function InstitutePage() {
         {/* Reviews */}
         <div>
           <div className="flex justify-between items-end mb-4 px-1">
-            <h2 className="text-lg font-bold text-primary">Parent & Student Reviews</h2>
+            <h2 className="font-heading text-2xl text-primary">Parent & Student Reviews</h2>
             <button onClick={() => setShowReviewModal(true)} className="text-accent text-sm font-semibold flex items-center gap-1 bg-accent/10 px-3 py-1.5 rounded-full hover:bg-accent/20 transition-colors">
               Write a Review
             </button>
@@ -355,7 +362,7 @@ export default function InstitutePage() {
         {/* Gallery */}
         <div className="bg-white rounded-[22px] p-5 shadow-soft border border-border/40">
           <div className="mb-4">
-            <h2 className="text-lg font-bold text-primary">Gallery</h2>
+            <h2 className="font-heading text-2xl text-primary">Gallery</h2>
             <p className="text-[13px] text-text-muted">Take a look inside our institute</p>
           </div>
           <ImageGallery images={images} name={name} category={category} instituteId={id} />
@@ -363,7 +370,7 @@ export default function InstitutePage() {
 
         {/* Location */}
         <div className="bg-white rounded-[22px] p-5 shadow-soft border border-border/40">
-          <h2 className="text-lg font-bold text-primary mb-4">Location</h2>
+          <h2 className="font-heading text-2xl text-primary mb-4">Location</h2>
           <div className="relative h-40 rounded-[14px] overflow-hidden mb-4 bg-[#E3F2FD]">
             {/* Map Placeholder Graphic */}
             <div className="absolute inset-0 bg-grid-[#1976D2]/10 opacity-50 pointer-events-none" />
@@ -387,7 +394,7 @@ export default function InstitutePage() {
         {/* Similar Institutes */}
         {similarInstitutes.length > 0 && (
           <div className="pt-2 mb-8">
-            <h2 className="text-lg font-bold text-primary mb-4 px-1">Similar Institutes Nearby</h2>
+            <h2 className="font-heading text-2xl text-primary mb-4 px-1">Similar Institutes Nearby</h2>
             <div className="flex overflow-x-auto gap-4 pb-6 -mx-4 px-4 snap-x hide-scrollbar">
               {similarInstitutes.map(inst => (
                 <div key={inst.id} className="min-w-[300px] w-[300px] snap-start">

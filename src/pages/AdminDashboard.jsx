@@ -20,6 +20,7 @@ import {
   ShieldCheck
 } from 'lucide-react';
 import SEOHead from '../components/SEOHead';
+import InstituteQRCode from '../components/InstituteQRCode';
 import { getInstitutes, saveInstitute, deleteInstitute, getAnalytics } from '../lib/db';
 import { uploadImage } from '../lib/supabase';
 import { SectionPreloader } from '../components/Preloader';
@@ -689,7 +690,7 @@ export default function AdminDashboard() {
                               <td className="py-3">
                                 <div className="flex items-center justify-center gap-2">
                                   <a
-                                    href={`/institutes/${inst.slug}`}
+                                    href={`https://studysetu.tech/institutes/${inst.slug}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="p-1.5 rounded-lg text-text-muted hover:text-accent hover:bg-surface transition-colors"
@@ -697,6 +698,11 @@ export default function AdminDashboard() {
                                   >
                                     <ExternalLink size={15} />
                                   </a>
+                                  <InstituteQRCode
+                                    instituteName={inst.name}
+                                    slug={inst.slug}
+                                    variant="button"
+                                  />
                                   <button
                                     onClick={() => handleEditClick(inst)}
                                     className="p-1.5 rounded-lg text-text-muted hover:text-primary hover:bg-surface transition-colors cursor-pointer"
