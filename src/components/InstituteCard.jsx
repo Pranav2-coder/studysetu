@@ -19,20 +19,20 @@ export default function InstituteCard({ institute }) {
   return (
     <Link
       to={`/institutes/${slug}`}
-      className="flex flex-row bg-white rounded-[22px] shadow-[0_8px_24px_-6px_rgba(31,42,68,0.06)] p-3.5 gap-4 relative no-underline group transition-all duration-300 active:scale-[0.97] hover:shadow-[0_12px_32px_-8px_rgba(31,42,68,0.12)] border border-border/40 hover:border-accent/30"
+      className="flex flex-row bg-white rounded-2xl shadow-[0_4px_16px_rgba(15,23,42,0.04)] p-3.5 gap-3.5 relative no-underline group transition-all duration-300 active:scale-[0.98] hover:shadow-[0_12px_28px_rgba(15,23,42,0.08)] border border-slate-200/80 hover:border-[#F97316]/40"
     >
       {/* Image Area */}
-      <div className="w-[30%] max-w-[110px] shrink-0 relative rounded-[16px] overflow-hidden min-h-[120px] bg-[#F6F1E8] shadow-inner">
+      <div className="w-[30%] max-w-[110px] shrink-0 relative rounded-xl overflow-hidden min-h-[115px] bg-slate-100 shadow-inner">
         {imageUrl ? (
           <img
             src={imageUrl}
             alt={name}
-            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
+            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.04]"
             loading="lazy"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#1F2A44]/10 to-[#E9DFD1]">
-            <span className="text-4xl font-heading text-primary/20 select-none">
+          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200">
+            <span className="text-3xl font-bold text-[#0F172A]/20 select-none">
               {name.charAt(0)}
             </span>
           </div>
@@ -43,14 +43,14 @@ export default function InstituteCard({ institute }) {
 
         {/* Verified Badge (Top Left) */}
         <div className="absolute top-2 left-2 pointer-events-none">
-          <span className="flex items-center bg-white/90 backdrop-blur-md p-1 rounded-full shadow-sm border border-white/40">
-            <CheckCircle2 size={12} className="text-[#22c55e]" />
+          <span className="flex items-center bg-white/90 backdrop-blur-md p-1 rounded-full shadow-xs border border-white/40">
+            <CheckCircle2 size={12} className="text-[#1B6B40]" />
           </span>
         </div>
 
         {/* Photo Counter (Bottom Left) */}
         <div className="absolute bottom-2 left-2 pointer-events-none">
-          <div className="flex items-center gap-1 bg-black/30 backdrop-blur-md border border-white/20 px-2 py-0.5 rounded-full text-white text-[9px] font-semibold tracking-wide">
+          <div className="flex items-center gap-1 bg-black/40 backdrop-blur-md border border-white/20 px-2 py-0.5 rounded-full text-white text-[9px] font-semibold tracking-wide">
             <ImageIcon size={9} />
             <span>1/4</span>
           </div>
@@ -58,52 +58,50 @@ export default function InstituteCard({ institute }) {
       </div>
 
       {/* Right Content */}
-      <div className="flex-1 flex flex-col min-w-0 py-1">
+      <div className="flex-1 flex flex-col min-w-0 py-0.5">
         {/* Institute Name */}
-        <h3 className="text-[19px] font-extrabold text-primary leading-[1.15] tracking-tight truncate mb-1 pr-8">
+        <h3 className="text-[17px] font-bold text-[#0F172A] leading-snug tracking-tight truncate mb-1 pr-2">
           {name}
         </h3>
 
         {/* Subjects */}
-        <p className="text-[13px] font-medium text-text-muted/90 truncate mb-1.5">
+        <p className="text-[13px] font-medium text-slate-500 truncate mb-1">
           {subjects.join(', ')}
         </p>
 
         {/* Area */}
-        <p className="text-[12px] font-medium text-text-muted flex items-center gap-1 mb-2">
-          <MapPin size={12} className="text-accent opacity-80" />
+        <p className="text-[12px] font-medium text-slate-500 flex items-center gap-1 mb-2">
+          <MapPin size={12} className="text-[#F97316]" />
           <span className="truncate">{area}</span>
         </p>
 
         {/* Experience & Expertise */}
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 mb-auto">
+        <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 mb-auto">
           {experience && (
-            <div className="flex items-center gap-1 text-[11px] font-semibold text-text-muted bg-[#F6F1E8]/60 px-2 py-0.5 rounded-md border border-border/40">
-              <Clock size={10} className="opacity-70" />
+            <div className="flex items-center gap-1 text-[11px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200/60">
+              <Clock size={10} className="opacity-70 text-slate-500" />
               <span className="truncate max-w-[70px]">{experience}</span>
             </div>
           )}
           {expertise && (
-            <div className="text-[11px] text-accent font-bold bg-accent/10 px-2 py-0.5 rounded-md truncate max-w-[100px] border border-accent/10">
+            <div className="text-[11px] text-[#F97316] font-bold bg-orange-50 px-2 py-0.5 rounded-md truncate max-w-[100px] border border-orange-100">
               {expertise}
             </div>
           )}
-          {!experience && !expertise && <div className="mb-auto"></div>}
         </div>
 
-
         {/* Bottom Info */}
-        <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-border/30">
+        <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-slate-100">
           {/* Class Chips */}
           <div className="flex">
-            <span className="bg-[#F6F1E8] px-3 py-1.5 rounded-xl text-[11px] font-bold text-text-muted truncate max-w-[90px] border border-border/40 shadow-sm">
+            <span className="bg-slate-100 px-2.5 py-1 rounded-lg text-[11px] font-bold text-slate-600 truncate max-w-[90px] border border-slate-200/60 shadow-2xs">
               {classesCovered[0]}
               {classesCovered.length > 1 ? ` +${classesCovered.length - 1}` : ''}
             </span>
           </div>
 
           {/* Fee Badge */}
-          <div className="bg-primary px-3 py-1.5 rounded-xl text-[13px] font-bold text-white shadow-sm shadow-primary/20">
+          <div className="bg-[#0F172A] px-3 py-1 rounded-xl text-[12px] font-bold text-white shadow-xs">
             {fees}
           </div>
         </div>

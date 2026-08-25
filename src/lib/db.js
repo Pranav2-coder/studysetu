@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import { institutes as seedInstitutes } from './seedData';
+
 
 // Helper to determine if we should use Supabase operations
 const canUseSupabaseDb = () => {
@@ -14,20 +14,10 @@ const REVIEWS_KEY = 'edufinder_reviews';
 // Initialize LocalStorage with seed data if empty
 const initLocalStorage = () => {
   if (!localStorage.getItem(INST_KEY)) {
-    localStorage.setItem(INST_KEY, JSON.stringify(seedInstitutes));
+    localStorage.setItem(INST_KEY, JSON.stringify([]));
   }
   if (!localStorage.getItem(ANALYTICS_KEY)) {
-    const initialAnalytics = {};
-    seedInstitutes.forEach(inst => {
-      initialAnalytics[inst.id] = {
-        id: inst.id,
-        views: 0,
-        whatsappClicks: 0,
-        callClicks: 0,
-        qrScans: 0
-      };
-    });
-    localStorage.setItem(ANALYTICS_KEY, JSON.stringify(initialAnalytics));
+    localStorage.setItem(ANALYTICS_KEY, JSON.stringify({}));
   }
   if (!localStorage.getItem(REVIEWS_KEY)) {
     localStorage.setItem(REVIEWS_KEY, JSON.stringify([]));
@@ -37,54 +27,7 @@ const initLocalStorage = () => {
 // Always make sure LocalStorage is initialized on load
 initLocalStorage();
 
-// Seed Supabase if it is empty
-let supabaseSeeded = false;
-async function checkAndSeedSupabase() {
-  if (supabaseSeeded || !supabase) return;
-  try {
-    const { count, error } = await supabase
-      .from('institutes')
-      .select('*', { count: 'exact', head: true });
-    
-    if (error) throw error;
-    
-    if (count === 0) {
-      console.log('Supabase institutes table is empty. Seeding seedData...');
 
-      // Map and insert institutes
-      const dbInstitutes = seedInstitutes.map(inst => ({
-        ...mapToSupabase(inst),
-        created_at: new Date().toISOString()
-      }));
-      
-      const { error: insertError } = await supabase
-        .from('institutes')
-        .insert(dbInstitutes);
-        
-      if (insertError) throw insertError;
-      
-      // Map and insert analytics
-      const dbAnalytics = seedInstitutes.map(inst => ({
-        institute_id: inst.id,
-        views: 0,
-        whatsapp_clicks: 0,
-        call_clicks: 0,
-        qr_scans: 0
-      }));
-      
-      const { error: insertAnalyticsError } = await supabase
-        .from('institute_analytics')
-        .insert(dbAnalytics);
-        
-      if (insertAnalyticsError) throw insertAnalyticsError;
-      
-      console.log('Supabase successfully seeded.');
-    }
-    supabaseSeeded = true;
-  } catch (err) {
-    console.warn('Failed to seed Supabase, will fallback:', err);
-  }
-}
 
 // Map event type to analytics counter field
 const getFieldFromEventType = (eventType) => {
@@ -195,7 +138,6 @@ export async function getInstitutes(forceRefresh = false) {
 
   if (canUseSupabaseDb()) {
     try {
-      await checkAndSeedSupabase();
       const { data, error } = await supabase
         .from('institutes')
         .select('*');
@@ -219,7 +161,6 @@ export async function getInstitutes(forceRefresh = false) {
 export async function getInstitute(idOrSlug) {
   if (canUseSupabaseDb()) {
     try {
-      await checkAndSeedSupabase();
       const isId = idOrSlug.match(/^inst_\d+$/) || idOrSlug.match(/^\d+$/);
       const queryField = isId ? 'id' : 'slug';
       

@@ -1,23 +1,19 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router';
 import {
-  Phone, MessageCircle, MapPin, Clock, Share, ArrowLeft, ShieldCheck, Eye, Globe,
-  Users, Navigation, Star, ChevronDown, ChevronUp, Image as ImageIcon, X, Sparkles, IndianRupee, CalendarClock
+  Phone, MessageCircle, MapPin, Clock, ArrowLeft, ShieldCheck, Eye,
+  Users, Navigation, Star, ChevronDown, ChevronUp, Image as ImageIcon, X
 } from 'lucide-react';
 import SEOHead from '../components/SEOHead';
 import ImageGallery from '../components/ImageGallery';
-import InstituteCard, { getCoverImage } from '../components/InstituteCard';
+import InstituteCard from '../components/InstituteCard';
 import OptimizedImage from '../components/OptimizedImage';
 import { ProfileSkeleton } from '../components/Preloader';
 import { getInstitute, getInstitutes, getReviews, addReview, getInstituteAnalytics } from '../lib/db';
 import { trackEvent } from '../lib/analytics';
 import { generateLocalBusinessSchema, generateFAQSchema, generateBreadcrumbSchema } from '../lib/seo';
 
-const MOCK_REVIEWS = [
-  { parent: 'Rakesh Verma', student: 'Student in 10th', text: 'Excellent teaching methodology. My son improved his scores significantly in just 3 months.', date: '2 weeks ago', img: 'https://i.pravatar.cc/150?u=4', rating: 5 },
-  { parent: 'Sunita Desai', student: 'Student in 12th', text: 'The faculty is very supportive. Regular test series helped in JEE preparation.', date: '1 month ago', img: 'https://i.pravatar.cc/150?u=5', rating: 5 },
-  { parent: 'Vikram Singh', student: 'Student in 9th', text: 'Highly recommend! The doubt clearing sessions are very helpful for my daughter.', date: '2 months ago', img: 'https://i.pravatar.cc/150?u=6', rating: 4 },
-];
+
 
 export default function InstitutePage() {
   const { slug } = useParams();
@@ -49,7 +45,7 @@ export default function InstitutePage() {
           setSimilarInstitutes(filtered);
 
           const instReviews = await getReviews(inst.id);
-          setReviews(instReviews.length > 0 ? instReviews : MOCK_REVIEWS);
+          setReviews(instReviews);
 
           const stat = await getInstituteAnalytics(inst.id);
           setAnalytics(stat || { views: 0 });
@@ -71,8 +67,15 @@ export default function InstitutePage() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const { coverImage } = institute || {};
-  const displayImages = coverImage ? coverImage.split(',').map(s => s.trim()).filter(Boolean) : [];
+  const DEFAULT_CLASSROOM_IMAGES = [
+    'https://images.unsplash.com/photo-1580582932707-520aed937b7b?auto=format&fit=crop&q=80&w=800',
+    'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&q=80&w=800',
+    'https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&q=80&w=800'
+  ];
+
+  const { coverImage, images = [] } = institute || {};
+  const rawImages = coverImage ? coverImage.split(',').map(s => s.trim()).filter(Boolean) : (images.length > 0 ? images : []);
+  const displayImages = rawImages.length > 0 ? rawImages : DEFAULT_CLASSROOM_IMAGES;
 
   useEffect(() => {
     if (displayImages.length <= 1) return;
@@ -99,7 +102,7 @@ export default function InstitutePage() {
     setIsSubmittingReview(true);
     try {
       const added = await addReview({ ...newReview, instituteId: id });
-      setReviews(prev => prev === MOCK_REVIEWS ? [added] : [added, ...prev]);
+      setReviews(prev => [added, ...prev]);
       setShowReviewModal(false);
       setNewReview({ parentName: '', studentContext: '', rating: 5, text: '' });
     } catch (err) {
@@ -109,7 +112,28 @@ export default function InstitutePage() {
     }
   };
 
-  const { id, name, category, description, subjects, classesCovered, area, address, fees, timings, experience, expertise, phone, whatsapp, studentsEnrolled = 0, facilities = [], faculty = [], images = [] } = institute;
+  const {
+    id,
+    name,
+    category,
+    description = `Leading coaching institute providing top-tier academic guidance and comprehensive test preparation. Dedicated faculty, modern infrastructure, and proven results for student success.`,
+    subjects = ['Mathematics', 'Science', 'English'],
+    classesCovered = ['Class 8th', 'Class 9th', 'Class 10th', 'Class 11th', 'Class 12th'],
+    area = 'Nagpur',
+    address = 'Nagpur, Maharashtra',
+    fees = 'Contact for Fees',
+    timings = 'Mon-Sat (7:00 AM - 8:00 PM)',
+    experience = '5+ Yrs',
+    expertise = 'Board & Competitive Exams',
+    phone = '919876543210',
+    whatsapp = '919876543210',
+    studentsEnrolled = 150,
+    facilities = ['Air Conditioned', 'Study Material', 'CCTV Security', 'Mock Tests', 'Library'],
+    faculty = [
+      { name: 'Prof. Rajesh Sharma', subject: 'Physics & Maths', experience: '12+ Yrs', qualification: 'M.Tech, IIT Bombay' },
+      { name: 'Dr. Anita Verma', subject: 'Chemistry', experience: '8+ Yrs', qualification: 'Ph.D. Organic Chemistry' }
+    ]
+  } = institute;
   const profileViews = analytics.views;
   const mapSearchUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(name + ' ' + address)}`;
 
@@ -129,9 +153,9 @@ export default function InstitutePage() {
 
   return (
     <main className="bg-bg min-h-screen pb-24">
-      <SEOHead 
-        title={`${name} | StudySetu`} 
-        description={`Find fees, contact details, reviews, and subjects for ${name} in ${area}. Verified tuition classes in Nagpur.`} 
+      <SEOHead
+        title={`${name} | StudySetu`}
+        description={`Find fees, contact details, reviews, and subjects for ${name} in ${area}. Verified tuition classes in Nagpur.`}
         url={`/institutes/${slug}`}
         schema={schema}
       />
@@ -145,9 +169,7 @@ export default function InstitutePage() {
           <span className={`font-heading text-lg font-bold transition-opacity duration-300 ${isScrolled ? 'opacity-100 text-primary' : 'opacity-0'}`}>
             {name.length > 20 ? name.substring(0, 20) + '...' : name}
           </span>
-          <button className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${isScrolled ? 'bg-[#F6F1E8] text-primary' : 'bg-black/20 text-white backdrop-blur-sm'}`}>
-            <Share size={18} />
-          </button>
+          <div className="w-10 h-10" />
         </div>
       </header>
 
@@ -157,9 +179,8 @@ export default function InstitutePage() {
           displayImages.map((imgUrl, idx) => (
             <div
               key={idx}
-              className={`absolute inset-0 w-full h-full transition-opacity duration-1000 ${
-                idx === currentImageIndex ? 'opacity-100 z-10' : 'opacity-0 z-0'
-              }`}
+              className={`absolute inset-0 w-full h-full transition-opacity duration-1000 ${idx === currentImageIndex ? 'opacity-100 z-10' : 'opacity-0 z-0'
+                }`}
             >
               <OptimizedImage
                 src={imgUrl}
@@ -174,7 +195,7 @@ export default function InstitutePage() {
             <span className="text-6xl font-heading text-white/20">{name.charAt(0)}</span>
           </div>
         )}
-        
+
         {/* Soft dark gradient at the top for the header buttons and bottom for badges */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/60 z-20 pointer-events-none" />
 
@@ -221,38 +242,50 @@ export default function InstitutePage() {
         {/* Action Buttons */}
         <div className="grid grid-cols-3 gap-3">
           <a href={`tel:${phone}`} onClick={() => trackEvent(id, 'call_click')} className="flex flex-col items-center justify-center gap-1.5 p-3 bg-white rounded-2xl shadow-soft border border-border/40 text-primary hover:bg-[#F6F1E8] transition-colors">
-            <div className="w-10 h-10 rounded-full bg-[#E8F5E9] text-[#2D7A4F] flex items-center justify-center mb-1"><Phone size={18} /></div>
+            <div className="w-10 h-10 rounded-full bg-[#1B6B40]/10 text-[#1B6B40] flex items-center justify-center mb-1"><Phone size={18} /></div>
             <span className="text-[11px] font-semibold">Call</span>
           </a>
           <a href={`https://wa.me/${whatsapp}`} target="_blank" rel="noopener noreferrer" onClick={() => trackEvent(id, 'whatsapp_click')} className="flex flex-col items-center justify-center gap-1.5 p-3 bg-white rounded-2xl shadow-soft border border-border/40 text-primary hover:bg-[#F6F1E8] transition-colors">
-            <div className="w-10 h-10 rounded-full bg-[#E8F5E9] text-[#2D7A4F] flex items-center justify-center mb-1"><MessageCircle size={18} /></div>
+            <div className="w-10 h-10 rounded-full bg-[#1B6B40]/10 text-[#1B6B40] flex items-center justify-center mb-1"><MessageCircle size={18} /></div>
             <span className="text-[11px] font-semibold">WhatsApp</span>
           </a>
           <a href={mapSearchUrl} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center justify-center gap-1.5 p-3 bg-white rounded-2xl shadow-soft border border-border/40 text-primary hover:bg-[#F6F1E8] transition-colors">
-            <div className="w-10 h-10 rounded-full bg-[#E3F2FD] text-[#1976D2] flex items-center justify-center mb-1"><Navigation size={18} /></div>
+            <div className="w-10 h-10 rounded-full bg-slate-100 text-[#0F172A] flex items-center justify-center mb-1"><Navigation size={18} /></div>
             <span className="text-[11px] font-semibold">Directions</span>
           </a>
         </div>
 
-        {/* Details Grid (Fine Dine / Editorial Style) */}
-        <div className="grid grid-cols-2 gap-3">
-          {expertise && (
-            <div className="bg-white rounded-[22px] p-5 shadow-soft border border-border/40 flex flex-col justify-center items-center text-center">
-              <Sparkles size={20} className="text-accent mb-2 opacity-80" />
-              <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest mb-1.5">Expertise</span>
-              <span className="font-heading text-lg text-primary">{expertise}</span>
+        {/* Gallery - Moved Upper */}
+        <div className="bg-white rounded-[22px] p-4 shadow-soft border border-border/40 space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="font-heading text-xl text-primary font-bold">Campus Gallery</h2>
+              <p className="text-[11px] text-text-muted">Take a look inside our institute</p>
+            </div>
+          </div>
+          <ImageGallery images={images} name={name} category={category} instituteId={id} />
+        </div>
+
+        {/* Compact Details Strip (Reduced Space) */}
+        <div className="bg-white rounded-2xl p-3 shadow-soft border border-border/40 grid grid-cols-3 gap-2 divide-x divide-border/40 text-center">
+          {expertise ? (
+            <div className="flex flex-col items-center justify-center px-1">
+              <span className="text-[9px] font-bold text-text-muted uppercase tracking-wider">Expertise</span>
+              <span className="text-xs font-extrabold text-primary mt-0.5 truncate w-full">{expertise}</span>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center px-1">
+              <span className="text-[9px] font-bold text-text-muted uppercase tracking-wider">Board</span>
+              <span className="text-xs font-extrabold text-primary mt-0.5">CBSE & State</span>
             </div>
           )}
-          <div className="bg-white rounded-[22px] p-5 shadow-soft border border-border/40 flex flex-col justify-center items-center text-center">
-            <IndianRupee size={20} className="text-accent mb-2 opacity-80" />
-            <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest mb-1.5">Monthly Fees</span>
-            <span className="font-heading text-xl text-primary">{fees}</span>
+          <div className="flex flex-col items-center justify-center px-1">
+            <span className="text-[9px] font-bold text-text-muted uppercase tracking-wider">Monthly Fees</span>
+            <span className="text-xs font-extrabold text-accent mt-0.5">{fees}</span>
           </div>
-          <div className="bg-white rounded-[22px] p-5 shadow-soft border border-border/40 flex flex-col justify-center items-center text-center col-span-2">
-            <CalendarClock size={20} className="text-accent mb-2 opacity-80" />
-            <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest mb-1.5">Timings & Schedule</span>
-            <span className="text-base font-semibold text-primary">{timings}</span>
-            <span className="text-[11px] font-bold text-text-muted mt-1.5 uppercase tracking-widest">Open Mon - Sat</span>
+          <div className="flex flex-col items-center justify-center px-1">
+            <span className="text-[9px] font-bold text-text-muted uppercase tracking-wider">Timings</span>
+            <span className="text-[10px] font-bold text-primary mt-0.5 truncate w-full">{timings}</span>
           </div>
         </div>
 
@@ -359,26 +392,17 @@ export default function InstitutePage() {
           </div>
         </div>
 
-        {/* Gallery */}
-        <div className="bg-white rounded-[22px] p-5 shadow-soft border border-border/40">
-          <div className="mb-4">
-            <h2 className="font-heading text-2xl text-primary">Gallery</h2>
-            <p className="text-[13px] text-text-muted">Take a look inside our institute</p>
-          </div>
-          <ImageGallery images={images} name={name} category={category} instituteId={id} />
-        </div>
-
         {/* Location */}
         <div className="bg-white rounded-[22px] p-5 shadow-soft border border-border/40">
           <h2 className="font-heading text-2xl text-primary mb-4">Location</h2>
-          <div className="relative h-40 rounded-[14px] overflow-hidden mb-4 bg-[#E3F2FD]">
+          <div className="relative h-40 rounded-[14px] overflow-hidden mb-4 bg-slate-100 border border-slate-200">
             {/* Map Placeholder Graphic */}
-            <div className="absolute inset-0 bg-grid-[#1976D2]/10 opacity-50 pointer-events-none" />
+            <div className="absolute inset-0 bg-slate-900/5 pointer-events-none" />
             <div className="absolute inset-0 flex flex-col items-center justify-center">
               <div className="w-10 h-10 bg-white rounded-full shadow-md flex items-center justify-center mb-2 z-10 relative">
-                <MapPin size={20} className="text-[#1976D2]" />
+                <MapPin size={20} className="text-[#0F172A]" />
               </div>
-              <span className="text-[#1976D2] font-semibold text-sm bg-white/80 px-3 py-1 rounded-full backdrop-blur-sm">View on Map</span>
+              <span className="text-[#0F172A] font-semibold text-sm bg-white/90 px-3 py-1 rounded-full backdrop-blur-sm shadow-2xs">View on Map</span>
             </div>
             <a href={mapSearchUrl} target="_blank" rel="noopener noreferrer" className="absolute inset-0 z-20" aria-label="Open in Google Maps"></a>
           </div>
@@ -386,7 +410,7 @@ export default function InstitutePage() {
             <MapPin size={16} className="text-accent flex-shrink-0 mt-0.5" />
             <span>{address}</span>
           </p>
-          <a href={mapSearchUrl} target="_blank" rel="noopener noreferrer" className="w-full py-3 bg-[#F6F1E8] text-primary rounded-xl font-bold text-sm flex items-center justify-center gap-2 border border-border/50 active:scale-[0.98] transition-transform">
+          <a href={mapSearchUrl} target="_blank" rel="noopener noreferrer" className="w-full py-3 bg-[#0F172A] text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-transform">
             <Navigation size={16} /> Get Directions
           </a>
         </div>
@@ -406,13 +430,13 @@ export default function InstitutePage() {
         )}
       </article>
 
-      {/* Floating Bottom CTA */}
-      <div className="fixed bottom-4 left-4 right-4 z-40 lg:hidden">
-        <div className="bg-white/95 backdrop-blur-md rounded-2xl p-2.5 flex gap-2.5 shadow-[0_8px_30px_rgba(0,0,0,0.12)] border border-white/60">
-          <a href={`tel:${phone}`} onClick={() => trackEvent(id, 'call_click')} className="flex-1 py-3.5 bg-[#1F2A44] text-white rounded-[14px] text-sm font-bold flex items-center justify-center gap-2 shadow-soft active:scale-[0.98] transition-transform">
+      {/* Sticky Bottom Bar */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-slate-200/80 px-4 py-3 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+        <div className="max-w-md mx-auto flex items-center gap-3">
+          <a href={`tel:${phone}`} onClick={() => trackEvent(id, 'call_click')} className="flex-1 py-3 bg-[#0F172A] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-xs active:scale-[0.98] transition-transform">
             <Phone size={16} /> Call Now
           </a>
-          <a href={`https://wa.me/${whatsapp}`} target="_blank" rel="noopener noreferrer" onClick={() => trackEvent(id, 'whatsapp_click')} className="flex-1 py-3.5 bg-[#2D7A4F] text-white rounded-[14px] text-sm font-bold flex items-center justify-center gap-2 shadow-soft active:scale-[0.98] transition-transform">
+          <a href={`https://wa.me/${whatsapp}`} target="_blank" rel="noopener noreferrer" onClick={() => trackEvent(id, 'whatsapp_click')} className="flex-1 py-3 bg-[#1B6B40] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-xs active:scale-[0.98] transition-transform">
             <MessageCircle size={16} /> WhatsApp
           </a>
         </div>

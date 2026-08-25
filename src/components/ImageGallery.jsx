@@ -112,7 +112,7 @@ export default function ImageGallery({ images = [], name = '', category = 'Tuiti
         <div className="grid grid-cols-4 gap-2">
           {[1, 2, 3, 4].map((i) => {
             const isLast = i === 4;
-            const extraCount = Math.max(0, items.length - 5) + 18; // Mocking +18 more
+            const extraCount = Math.max(0, items.length - 5);
             
             return (
               <div 
