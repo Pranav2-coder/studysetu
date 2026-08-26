@@ -269,23 +269,23 @@ export default function InstitutePage() {
         {/* Compact Details Strip (Reduced Space) */}
         <div className="bg-white rounded-2xl p-3 shadow-soft border border-border/40 grid grid-cols-3 gap-2 divide-x divide-border/40 text-center">
           {expertise ? (
-            <div className="flex flex-col items-center justify-center px-1">
-              <span className="text-[9px] font-bold text-text-muted uppercase tracking-wider">Expertise</span>
-              <span className="text-xs font-extrabold text-primary mt-0.5 truncate w-full">{expertise}</span>
+            <div className="flex flex-col items-center justify-start px-1 h-full">
+              <span className="text-[9px] font-bold text-text-muted uppercase tracking-wider mb-0.5">Expertise</span>
+              <span className="text-xs font-extrabold text-primary leading-tight">{expertise}</span>
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center px-1">
-              <span className="text-[9px] font-bold text-text-muted uppercase tracking-wider">Board</span>
-              <span className="text-xs font-extrabold text-primary mt-0.5">CBSE & State</span>
+            <div className="flex flex-col items-center justify-start px-1 h-full">
+              <span className="text-[9px] font-bold text-text-muted uppercase tracking-wider mb-0.5">Board</span>
+              <span className="text-xs font-extrabold text-primary leading-tight">CBSE & State</span>
             </div>
           )}
-          <div className="flex flex-col items-center justify-center px-1">
-            <span className="text-[9px] font-bold text-text-muted uppercase tracking-wider">Monthly Fees</span>
-            <span className="text-xs font-extrabold text-accent mt-0.5">{fees}</span>
+          <div className="flex flex-col items-center justify-start px-1 h-full">
+            <span className="text-[9px] font-bold text-text-muted uppercase tracking-wider mb-0.5">Monthly Fees</span>
+            <span className="text-xs font-extrabold text-accent leading-tight">{fees}</span>
           </div>
-          <div className="flex flex-col items-center justify-center px-1">
-            <span className="text-[9px] font-bold text-text-muted uppercase tracking-wider">Timings</span>
-            <span className="text-[10px] font-bold text-primary mt-0.5 truncate w-full">{timings}</span>
+          <div className="flex flex-col items-center justify-start px-1 h-full">
+            <span className="text-[9px] font-bold text-text-muted uppercase tracking-wider mb-0.5">Timings</span>
+            <span className="text-[11px] font-bold text-primary leading-tight">{timings}</span>
           </div>
         </div>
 
