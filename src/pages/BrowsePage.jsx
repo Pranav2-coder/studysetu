@@ -87,9 +87,9 @@ export default function BrowsePage() {
         url="/browse"
       />
 
-      {/* Modern Ultra-Compact Sticky Search Header (Height reduced by >40%) */}
+      {/* Modern Ultra-Compact Sticky Search Header */}
       <div className="sticky top-16 z-40 bg-[#F8FAFC]/90 backdrop-blur-md px-4 py-3 border-b border-slate-200/60 shadow-[0_2px_12px_rgba(15,23,42,0.03)] animate-fade-in-up">
-        <div className="max-w-4xl mx-auto flex flex-col gap-2.5">
+        <div className="max-w-[1400px] mx-auto flex flex-col gap-2.5">
           {/* 52px Search Bar immediately below Navbar */}
           <div className="relative flex items-center">
             <div className="absolute left-4 pointer-events-none text-slate-400">
@@ -196,12 +196,12 @@ export default function BrowsePage() {
       )}
 
       {/* Main Institute Listing Area */}
-      <main className="bg-[#F8FAFC] min-h-screen pb-28 pt-3 animate-fade-in-up">
-        <div className="max-w-4xl mx-auto px-4">
+      <main className="bg-[#F8FAFC] min-h-screen pb-28 pt-4 animate-fade-in-up">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
 
           {/* Results Summary Header */}
           {!loading && (
-            <div className="flex items-center justify-between mb-3 px-0.5">
+            <div className="flex items-center justify-between mb-5 px-0.5">
               <div className="flex items-center gap-2">
                 <h2 className="text-base font-extrabold text-[#0F172A] tracking-tight">
                   {results.length} <span className="text-slate-500 font-medium text-sm">Institutes Available</span>
@@ -229,7 +229,7 @@ export default function BrowsePage() {
           ) : (
             <>
               {results.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-[20px] md:gap-[24px] lg:gap-[32px]">
                   {results.map((institute) => (
                     <InstituteCard key={institute.id} institute={institute} />
                   ))}

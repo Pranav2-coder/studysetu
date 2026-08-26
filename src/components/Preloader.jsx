@@ -61,34 +61,26 @@ export function SectionPreloader({ message = 'Finding the best options for you' 
  */
 export function SkeletonCard() {
   return (
-    <div className="skeleton-card">
-      <div className="skeleton-img" />
-
-      <div className="skeleton-body">
-        <div className="flex gap-1.5">
-          <div className="skeleton h-5 w-16" />
-          <div className="skeleton h-5 w-20" />
-          <div className="skeleton h-5 w-14" />
+    <div className="w-full h-full flex flex-col bg-white rounded-[22px] border border-slate-200/80 shadow-[0_8px_30px_rgba(0,0,0,0.08)] overflow-hidden">
+      <div className="w-full h-[220px] bg-slate-200 animate-pulse shrink-0" />
+      <div className="p-5 sm:p-6 flex-1 flex flex-col justify-between space-y-4">
+        <div className="space-y-2.5">
+          <div className="h-7 w-3/4 bg-slate-200 animate-pulse rounded-lg" />
+          <div className="h-4 w-full bg-slate-200 animate-pulse rounded-md" />
         </div>
-
-        <div className="skeleton h-3 w-full" />
-        <div className="skeleton h-3 w-4/5" />
-
-        <div className="flex gap-1.5">
-          <div className="skeleton h-5 w-10" />
-          <div className="skeleton h-5 w-10" />
-          <div className="skeleton h-5 w-10" />
-          <div className="skeleton h-5 w-10" />
+        <div className="space-y-2.5 pt-1">
+          <div className="flex gap-3">
+            <div className="h-6 w-20 bg-slate-200 animate-pulse rounded-lg" />
+            <div className="h-6 w-24 bg-slate-200 animate-pulse rounded-lg" />
+          </div>
+          <div className="flex gap-3">
+            <div className="h-7 w-24 bg-slate-200 animate-pulse rounded-lg" />
+            <div className="h-7 w-28 bg-slate-200 animate-pulse rounded-lg" />
+          </div>
         </div>
-
-        <div className="flex gap-4 py-2 border-t border-b border-border/30">
-          <div className="skeleton h-3 w-24" />
-          <div className="skeleton h-3 w-20" />
-        </div>
-
-        <div className="flex gap-2">
-          <div className="skeleton h-9 flex-1 rounded-lg" />
-          <div className="skeleton h-9 flex-1 rounded-lg" />
+        <div className="flex justify-between items-center pt-3 border-t border-slate-100 mt-auto">
+          <div className="h-6 w-28 bg-slate-200 animate-pulse rounded-lg" />
+          <div className="h-6 w-24 bg-slate-200 animate-pulse rounded-lg" />
         </div>
       </div>
     </div>
@@ -98,9 +90,9 @@ export function SkeletonCard() {
 /**
  * Grid of skeleton cards - for Browse and Featured sections.
  */
-export function SkeletonGrid({ count = 6 }) {
+export function SkeletonGrid({ count = 4 }) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-[20px] md:gap-[24px] lg:gap-[32px]">
       {Array.from({ length: count }).map((_, i) => (
         <SkeletonCard key={i} />
       ))}
