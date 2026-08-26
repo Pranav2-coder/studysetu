@@ -12,18 +12,6 @@ const budgetRanges = [
   { label: '₹5,000+', min: 5000, max: Infinity },
 ];
 
-const nagpurAreas = [
-  'All Areas',
-  'Dharampeth',
-  'Ramdaspeth',
-  'Sadar',
-  'Manewada',
-  'Sitabuldi',
-  'Nandanvan',
-  'Medical Square',
-  'Laxmi Nagar'
-];
-
 export default function BrowsePage() {
   const [institutes, setInstitutes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -51,10 +39,21 @@ export default function BrowsePage() {
     loadBrowseData();
   }, []);
 
+  const nagpurAreas = useMemo(() => {
+    const extractedAreas = new Set();
+    institutes.forEach(inst => {
+      if (inst.area && typeof inst.area === 'string' && inst.area.trim()) {
+        extractedAreas.add(inst.area.trim());
+      }
+    });
+    const sortedAreas = Array.from(extractedAreas).sort((a, b) => a.localeCompare(b));
+    return ['All Areas', ...sortedAreas];
+  }, [institutes]);
+
   const results = useMemo(() => {
     return institutes.filter(inst => {
       if (filters.category && filters.category !== 'All' && inst.category !== filters.category) return false;
-      if (filters.area && filters.area !== 'All Areas' && inst.area !== filters.area) return false;
+      if (filters.area && filters.area !== 'All Areas' && inst.area?.trim().toLowerCase() !== filters.area.trim().toLowerCase()) return false;
       if (filters.subject && !inst.subjects.includes(filters.subject)) return false;
       if (filters.budgetRange) {
         const range = budgetRanges.find(r => r.label === filters.budgetRange);
