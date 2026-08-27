@@ -4,6 +4,7 @@ import SEOHead from '../components/SEOHead';
 import InstituteCard from '../components/InstituteCard';
 import { SkeletonGrid } from '../components/Preloader';
 import { getInstitutes } from '../lib/db';
+import { generateBreadcrumbSchema } from '../lib/seo';
 
 const budgetRanges = [
   { label: 'Under ₹1,000', min: 0, max: 1000 },
@@ -76,14 +77,39 @@ export default function BrowsePage() {
     ? `Search Results for "${searchQuery}" — StudySetu`
     : filters.area 
     ? `Institutes in ${filters.area} — StudySetu` 
-    : "Browse Institutes — StudySetu";
+    : 'Browse Institutes — StudySetu';
+
+  const dynamicDescription = filters.area && filters.area !== 'All Areas'
+    ? `Browse verified tuition classes and computer training institutes in ${filters.area}, Nagpur. Compare fees, subjects, and contact them directly.`
+    : 'Browse and compare verified tuition classes and computer training institutes in Nagpur. Find fees, subjects, and contact details.';
+
+  const browseSchema = [
+    generateBreadcrumbSchema([
+      { name: 'Home', url: 'https://studysetu.com/' },
+      { name: 'Browse Institutes', url: 'https://studysetu.com/browse' },
+    ]),
+    results.length > 0 && {
+      '@context': 'https://schema.org',
+      '@type': 'ItemList',
+      name: 'Coaching Institutes in Nagpur',
+      description: 'Verified tuition classes and computer training institutes in Nagpur',
+      numberOfItems: results.length,
+      itemListElement: results.slice(0, 10).map((inst, i) => ({
+        '@type': 'ListItem',
+        position: i + 1,
+        url: `https://studysetu.com/institutes/${inst.slug}`,
+        name: inst.name,
+      })),
+    },
+  ].filter(Boolean);
 
   return (
     <>
       <SEOHead 
         title={dynamicTitle} 
-        description="Browse and compare tuition classes and computer training institutes in Nagpur." 
+        description={dynamicDescription} 
         url="/browse"
+        schema={browseSchema}
       />
 
       {/* Modern Ultra-Compact Sticky Search Header */}
@@ -195,8 +221,15 @@ export default function BrowsePage() {
       )}
 
       {/* Main Institute Listing Area */}
-      <main className="bg-[#F8FAFC] min-h-screen pb-28 pt-4 animate-fade-in-up">
+      <div className="bg-[#F8FAFC] min-h-screen pb-28 pt-4 animate-fade-in-up">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
+
+          {/* Visually hidden H1 for SEO — the visible count h2 is not a proper page title */}
+          <h1 className="sr-only">
+            {filters.area && filters.area !== 'All Areas'
+              ? `Coaching Institutes in ${filters.area}, Nagpur`
+              : 'Browse Coaching Institutes in Nagpur'}
+          </h1>
 
           {/* Results Summary Header */}
           {!loading && (
@@ -260,7 +293,7 @@ export default function BrowsePage() {
             </>
           )}
         </div>
-      </main>
+      </div>
     </>
   );
 }

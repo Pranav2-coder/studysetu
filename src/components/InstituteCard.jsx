@@ -42,9 +42,12 @@ export default function InstituteCard({ institute }) {
         {imageUrl ? (
           <img
             src={imageUrl}
-            alt={name}
+            alt={`${name} — ${area} coaching institute`}
             className="w-full h-full object-cover object-center scale-[1.08] transition-transform duration-500 ease-out group-hover:scale-[1.14]"
             loading="lazy"
+            decoding="async"
+            width={600}
+            height={220}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-800 via-slate-900 to-indigo-950 text-white relative scale-[1.08] transition-transform duration-500 ease-out group-hover:scale-[1.14]">

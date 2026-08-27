@@ -1,4 +1,18 @@
 User-agent: *
 Allow: /
 
+# Block private/admin routes from indexing
+Disallow: /admin
+Disallow: /admin/
+
+# Block API endpoints
+Disallow: /api/
+Disallow: /api/*
+
+# Block auth pages
+Disallow: /login
+Disallow: /login/
+Disallow: /dashboard
+Disallow: /dashboard/
+
 Sitemap: https://studysetu.com/sitemap.xml

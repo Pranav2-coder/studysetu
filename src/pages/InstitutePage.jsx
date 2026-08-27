@@ -11,7 +11,7 @@ import OptimizedImage from '../components/OptimizedImage';
 import { ProfileSkeleton } from '../components/Preloader';
 import { getInstitute, getInstitutes, getReviews, addReview, getInstituteAnalytics } from '../lib/db';
 import { trackEvent } from '../lib/analytics';
-import { generateLocalBusinessSchema, generateFAQSchema, generateBreadcrumbSchema } from '../lib/seo';
+import { generateLocalBusinessSchema, generateFAQSchema, generateBreadcrumbSchema, generateAggregateRatingSchema, generateReviewSchema } from '../lib/seo';
 
 
 
@@ -149,21 +149,33 @@ export default function InstitutePage() {
     { question: `Where is ${name} located?`, answer: address },
     { question: `What are the monthly fees at ${name}?`, answer: fees }
   ]);
-  const schema = [localBusinessSchema, breadcrumbSchema, faqSchema].filter(Boolean);
+  const aggregateRatingSchema = generateAggregateRatingSchema(reviews);
+  const reviewSchemas = generateReviewSchema(reviews, name);
+
+  // Build the full LocalBusiness with embedded rating
+  const enrichedLocalBusinessSchema = aggregateRatingSchema
+    ? { ...localBusinessSchema, aggregateRating: aggregateRatingSchema }
+    : localBusinessSchema;
+
+  const schema = [enrichedLocalBusinessSchema, breadcrumbSchema, faqSchema, ...(reviewSchemas || [])].filter(Boolean);
 
   return (
     <main className="bg-bg min-h-screen pb-24">
       <SEOHead
-        title={`${name} | StudySetu`}
+        title={name}
         description={`Find fees, contact details, reviews, and subjects for ${name} in ${area}. Verified tuition classes in Nagpur.`}
         url={`/institutes/${slug}`}
+        type="website"
         schema={schema}
       />
 
       {/* Sticky Header */}
-      <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-white/90 backdrop-blur-md shadow-sm py-3' : 'bg-transparent py-4'}`}>
+      <div
+        role="banner"
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-white/90 backdrop-blur-md shadow-sm py-3' : 'bg-transparent py-4'}`}
+      >
         <div className="flex items-center justify-between px-4">
-          <Link to="/browse" className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${isScrolled ? 'bg-[#F6F1E8] text-primary' : 'bg-black/20 text-white backdrop-blur-sm'}`}>
+          <Link to="/browse" aria-label="Back to Browse" className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${isScrolled ? 'bg-[#F6F1E8] text-primary' : 'bg-black/20 text-white backdrop-blur-sm'}`}>
             <ArrowLeft size={20} />
           </Link>
           <span className={`font-heading text-lg font-bold transition-opacity duration-300 ${isScrolled ? 'opacity-100 text-primary' : 'opacity-0'}`}>
@@ -171,7 +183,7 @@ export default function InstitutePage() {
           </span>
           <div className="w-10 h-10" />
         </div>
-      </header>
+      </div>
 
       {/* Hero Image Slider */}
       <div className="relative w-full h-[180px] md:h-[240px] lg:h-[300px] overflow-hidden bg-surface">
@@ -184,9 +196,12 @@ export default function InstitutePage() {
             >
               <OptimizedImage
                 src={imgUrl}
-                alt={`${name} classroom and facilities in ${area} image ${idx + 1}`}
+                alt={`${name} classroom and facilities in ${area} — image ${idx + 1}`}
                 className="absolute inset-0 w-full h-full object-cover object-center"
                 priority={idx === 0}
+                fetchpriority={idx === 0 ? 'high' : 'low'}
+                width={800}
+                height={300}
               />
             </div>
           ))

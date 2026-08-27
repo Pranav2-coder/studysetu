@@ -25,6 +25,7 @@ export default function AboutPage() {
       <SEOHead
         title="About StudySetu — Nagpur's Institute Directory"
         description="Learn about StudySetu — a simple directory helping students and parents discover the right coaching classes and computer institutes in Nagpur."
+        url="/about"
       />
 
       {/* Hero */}

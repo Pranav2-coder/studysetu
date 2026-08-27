@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Phone, Mail, MapPin, CheckCircle } from 'lucide-react';
 import SEOHead from '../components/SEOHead';
+import { generateContactPageSchema } from '../lib/seo';
 import { submitContact } from '../lib/supabase';
 
 const initialFormState = {
@@ -59,6 +60,8 @@ export default function ContactPage() {
       <SEOHead
         title="Contact Us — StudySetu Nagpur"
         description="Get in touch with StudySetu. Have questions or want to list your institute? We'd love to hear from you."
+        url="/contact"
+        schema={generateContactPageSchema()}
       />
 
       <div className="section bg-bg">
