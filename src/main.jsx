@@ -12,6 +12,7 @@ const InstitutePage = lazy(() => import('./pages/InstitutePage'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 const AboutPage = lazy(() => import('./pages/AboutPage'));
 const ContactPage = lazy(() => import('./pages/ContactPage'));
+const OraginPage = lazy(() => import('./pages/OraginPage'));
 
 // A simple full-screen loader for chunk loading
 const ChunkLoader = () => (
@@ -32,6 +33,10 @@ const router = createBrowserRouter([
       { path: 'about', element: <Suspense fallback={<ChunkLoader />}><AboutPage /></Suspense> },
       { path: 'contact', element: <Suspense fallback={<ChunkLoader />}><ContactPage /></Suspense> },
     ],
+  },
+  {
+    path: '/oragin',
+    element: <Suspense fallback={<ChunkLoader />}><OraginPage /></Suspense>,
   },
 ]);
 
